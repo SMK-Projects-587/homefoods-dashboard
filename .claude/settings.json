@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rg *)",
+      "Bash(fd *)",
+      "Bash(git status)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git branch*)",
+      "Bash(gh pr list*)",
+      "Bash(gh pr view*)",
+      "Bash(gh pr diff*)",
+      "Bash(gh issue list*)",
+      "Bash(gh issue view*)",
+      "Bash(gh repo view*)",
+      "Bash(pnpm lint*)",
+      "Bash(pnpm tsc*)",
+      "Bash(pnpm test*)",
+      "Bash(pnpm vitest*)",
+      "Bash(pnpm build*)",
+      "Bash(pnpm format*)",
+      "Bash(pnpm prettier*)",
+      "Bash(pnpm eslint*)"
+    ],
+    "deny": []
+  }
+}
