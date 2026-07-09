@@ -1,10 +1,12 @@
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useNavigate, useParams } from '@tanstack/react-router';
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import ImagesSection from '@/features/products/components/images-section';
-import ProductDetailsForm from '@/features/products/components/product-details-form';
+import ProductDetailsForm, {
+  PRODUCT_DETAILS_FORM_ID,
+} from '@/features/products/components/product-details-form';
 import VariantsSection from '@/features/products/components/variants-section';
 import {
   useCreateProduct,
@@ -55,6 +57,7 @@ export default function ProductFormPage() {
   );
   const createMutation = useCreateProduct();
   const updateMutation = useUpdateProduct(productId ?? -1);
+  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   if (isEditing && isLoadingProduct) {
     return (
@@ -75,20 +78,28 @@ export default function ProductFormPage() {
         >
           <ArrowLeft className="size-4" />
         </Button>
-        <div>
-          <h1 className="text-foreground text-xl font-semibold">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-foreground truncate text-xl font-semibold">
             {isEditing ? product?.name : 'New product'}
           </h1>
           {isEditing && (
-            <p className="text-muted-foreground text-sm">{product?.slug}</p>
+            <p className="text-muted-foreground truncate text-sm">
+              {product?.slug}
+            </p>
           )}
         </div>
+        <Button
+          type="submit"
+          form={PRODUCT_DETAILS_FORM_ID}
+          disabled={isSaving}
+        >
+          {isSaving && <Loader2 className="size-4 animate-spin" />}
+          {isEditing ? 'Save changes' : 'Create product'}
+        </Button>
       </div>
 
       <ProductDetailsForm
         defaultValues={toDetailsValues(product)}
-        isPending={createMutation.isPending || updateMutation.isPending}
-        submitLabel={isEditing ? 'Save changes' : 'Create product'}
         onSubmit={(values) => {
           const input = toProductInput(values);
           if (isEditing && productId !== undefined) {
