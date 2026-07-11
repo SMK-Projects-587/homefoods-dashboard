@@ -1,6 +1,7 @@
 import { toast } from 'sonner';
 import {
   keepPreviousData,
+  useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
@@ -9,21 +10,39 @@ import {
 import {
   createProduct,
   getProduct,
-  listProducts,
   listProductsPage,
   type ListProductsParams,
   updateProduct,
 } from '../api';
 import type { ProductInsert, ProductUpdate } from '../types';
 
+// Base key for cache invalidation; every products query is nested under it.
 export const productsKey = ['products'] as const;
 export const productsTableKey = (params: ListProductsParams) =>
   ['products', 'table', params] as const;
+export const productsInfiniteKey = (search: string) =>
+  ['products', 'infinite', search] as const;
 export const productKey = (id: number) => ['products', id] as const;
 
-/** Full list — for the order product picker. */
-export function useProducts() {
-  return useQuery({ queryKey: productsKey, queryFn: listProducts });
+const PICKER_PAGE_SIZE = 20;
+
+/** Search-as-you-type, page-by-page products — for the order product picker. */
+export function useInfiniteProducts(search: string) {
+  return useInfiniteQuery({
+    queryKey: productsInfiniteKey(search),
+    queryFn: ({ pageParam }) =>
+      listProductsPage({
+        page: pageParam,
+        pageSize: PICKER_PAGE_SIZE,
+        search: search || undefined,
+      }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      const loaded = allPages.reduce((sum, page) => sum + page.rows.length, 0);
+      return loaded < lastPage.total ? allPages.length : undefined;
+    },
+    placeholderData: keepPreviousData,
+  });
 }
 
 /** Paginated list — for the products table. */

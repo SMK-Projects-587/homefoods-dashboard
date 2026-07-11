@@ -61,12 +61,13 @@ The three list screens (orders, products, categories) are server-driven. The pie
 
 - **`lib/pagination.ts`** — `ListParams` (`{ page, pageSize, search?, sort? }`, `page` is 0-based) in, `Paginated<T>` (`{ rows, total, pageCount }`) out. Helpers: `rangeFor`, `toPaginated`, `resolveSort` (allowlist the sortable columns — see each `api.ts`), `sanitizeSearch` (required before interpolating into a PostgREST `.or()` string).
 - **`api.ts`** — the paginated `listX(params)` uses `.ilike()`/`.or()`, `.eq()`, `.order()`, `.range()`, and `select(..., { count: 'exact' })`. Only allowlisted real columns are sortable (derived/joined columns like product price aren't).
-- **hook** — `useXTable(params)` with `placeholderData: keepPreviousData` for flicker-free paging. Keep the full-list `useX()` hooks too, but **only** for dropdowns/pickers (`CategorySelect`, the order product picker) — never for a table.
+- **hook** — `useXTable(params)` with `placeholderData: keepPreviousData` for flicker-free paging. A full-list `useX()` hook is fine for a small reference dropdown (e.g. `useCategories()` for `CategorySelect`), but **never** for a table or a potentially-large picker.
+- **large pickers** — search-as-you-type + infinite scroll + virtualization, not a full list. `ProductCombobox` is the reference: `useInfiniteProducts` (`useInfiniteQuery` over `listProductsPage`) feeding a `@tanstack/react-virtual` list inside a `popover`. Virtualizing inside a portaled popover needs a **state-backed scroll ref** (`useState<HTMLDivElement | null>`), not `useRef` — the element mounts after first render, and only a state update re-measures the viewport.
 - **`hooks/useTableUrlState.ts`** — single source of truth for page/search/sort/filters, persisted in the route's **URL search params** (debounced search, resets to page 1 on any filter/sort/search change). Returns `params` for the query hook and `controls` for `<DataTable server={...} />`.
 - **`DataTable`** — pass `server={{ ...controls, pageCount, isFetching }}` to switch it into server mode (`manualPagination/Filtering/Sorting`); omit `server` for the client-side mode still used by small in-page tables (`VariantsSection`).
 - **routes** — each list route needs a `validateSearch` (see `lib/tableSearch.ts`). Annotate the return type with an interface whose filter keys are **optional** (`status?: string`), otherwise TanStack treats `search` as required and every `navigate({ to: '/orders' })` breaks.
 
-Known gap: the order product picker (`OrderItemsEditor`) still loads all products via the full-list hook — same latent 1000-row ceiling; paginate/search it when product volume grows.
+The order product picker (`OrderItemsEditor` → `ProductCombobox`) is server-searched and infinite-scrolled, so it no longer loads the whole catalog. It hands back the full `ProductListItem` (variants embedded) on select, so the editor derives variants without a second fetch.
 
 ## Forms
 

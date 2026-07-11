@@ -29,17 +29,7 @@ const PRODUCT_LIST_SELECT =
   '*, categories(id, name), product_variants(id, title, sku, price, is_default, is_active, in_stock, attributes)';
 const PRODUCT_SORT_COLUMNS = ['name', 'is_active'] as const;
 
-/** Full, unpaginated list — for the order product picker. */
-export async function listProducts(): Promise<ProductListItem[]> {
-  const { data, error } = await supabase
-    .from('products')
-    .select(PRODUCT_LIST_SELECT)
-    .order('name');
-  if (error) throw error;
-  return data as ProductListItem[];
-}
-
-/** Server-side filtered/sorted/paginated list — for the products table. */
+/** Server-side filtered/sorted/paginated list — for the products table and picker. */
 export async function listProductsPage(
   params: ListProductsParams,
 ): Promise<Paginated<ProductListItem>> {

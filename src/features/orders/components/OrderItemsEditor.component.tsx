@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useProducts } from '@/features/products';
+import { ProductCombobox, type ProductListItem } from '@/features/products';
 
 export interface OrderItemDraft {
   variantId: number;
@@ -44,12 +44,11 @@ export function OrderItemsEditor({
   onRemove,
   onQuantityChange,
 }: OrderItemsEditorProps) {
-  const { data: products } = useProducts();
-  const [productId, setProductId] = useState('');
+  const [selectedProduct, setSelectedProduct] =
+    useState<ProductListItem | null>(null);
   const [variantId, setVariantId] = useState('');
   const [quantity, setQuantity] = useState('1');
 
-  const selectedProduct = products?.find((p) => String(p.id) === productId);
   const variants = selectedProduct?.product_variants ?? [];
   const selectedVariant = variants.find((v) => String(v.id) === variantId);
 
@@ -65,7 +64,7 @@ export function OrderItemsEditor({
       quantity: qty,
       attributes: (selectedVariant.attributes as Record<string, unknown>) ?? {},
     });
-    setProductId('');
+    setSelectedProduct(null);
     setVariantId('');
     setQuantity('1');
   };
@@ -73,24 +72,13 @@ export function OrderItemsEditor({
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-[2fr_2fr_90px_auto]">
-        <Select
-          value={productId}
-          onValueChange={(value) => {
-            setProductId(value);
+        <ProductCombobox
+          value={selectedProduct}
+          onChange={(product) => {
+            setSelectedProduct(product);
             setVariantId('');
           }}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select product" />
-          </SelectTrigger>
-          <SelectContent>
-            {products?.map((product) => (
-              <SelectItem key={product.id} value={String(product.id)}>
-                {product.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        />
 
         <Select
           value={variantId}
