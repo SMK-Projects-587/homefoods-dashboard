@@ -1,2 +1,2 @@
-export * from './hooks/use-categories';
+export * from './hooks/useCategories';
 export * from './types';

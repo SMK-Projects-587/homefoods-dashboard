@@ -1,2 +1,2 @@
-export * from './hooks/use-products';
+export * from './hooks/useProducts';
 export * from './types';

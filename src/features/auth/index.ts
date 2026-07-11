@@ -1,3 +1,3 @@
 export { signIn, signOut } from './api';
-export { default as LoginForm } from './components/login-form';
+export { LoginForm } from './components/LoginForm.component';
 export { useAuthStore } from './store';

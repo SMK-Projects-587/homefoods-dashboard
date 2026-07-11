@@ -3,10 +3,11 @@ import { createRoot } from 'react-dom/client';
 
 import './index.css';
 
-import App from './App.tsx';
+import { router } from '@/routes/router';
+
+import { App } from './App.component';
 import { useAuthStore } from './features/auth';
 import { supabase } from './lib/supabase';
-import { router } from './router';
 
 async function bootstrap() {
   const { data } = await supabase.auth.getSession();

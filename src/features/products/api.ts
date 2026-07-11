@@ -16,7 +16,9 @@ import type {
 export async function listProducts(): Promise<ProductListItem[]> {
   const { data, error } = await supabase
     .from('products')
-    .select('*, categories(id, name), product_variants(id, price, is_default)')
+    .select(
+      '*, categories(id, name), product_variants(id, title, sku, price, is_default, is_active, in_stock, attributes)',
+    )
     .order('name');
   if (error) throw error;
   return data as ProductListItem[];

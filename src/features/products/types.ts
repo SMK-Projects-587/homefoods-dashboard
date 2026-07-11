@@ -13,7 +13,17 @@ export type ProductImageInsert = TablesInsert<'product_images'>;
 
 export interface ProductListItem extends Product {
   categories: { id: number; name: string } | null;
-  product_variants: Pick<ProductVariant, 'id' | 'price' | 'is_default'>[];
+  product_variants: Pick<
+    ProductVariant,
+    | 'id'
+    | 'title'
+    | 'sku'
+    | 'price'
+    | 'is_default'
+    | 'is_active'
+    | 'in_stock'
+    | 'attributes'
+  >[];
 }
 
 export interface ProductDetail extends Product {

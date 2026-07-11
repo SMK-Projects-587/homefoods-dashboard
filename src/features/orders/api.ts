@@ -1,6 +1,12 @@
 import { supabase } from '@/lib/supabase';
 
-import type { Order, OrderDetail, OrderStatus } from './types';
+import type {
+  Order,
+  OrderDetail,
+  OrderInsert,
+  OrderItemInsert,
+  OrderStatus,
+} from './types';
 
 export async function listOrders(): Promise<Order[]> {
   const { data, error } = await supabase
@@ -33,4 +39,24 @@ export async function updateOrderStatus(
     .single();
   if (error) throw error;
   return data;
+}
+
+export async function createOrder(
+  order: OrderInsert,
+  items: Omit<OrderItemInsert, 'order_id'>[],
+): Promise<OrderDetail> {
+  const { data: created, error } = await supabase
+    .from('orders')
+    .insert(order)
+    .select()
+    .single();
+  if (error) throw error;
+
+  const { data: insertedItems, error: itemsError } = await supabase
+    .from('order_items')
+    .insert(items.map((item) => ({ ...item, order_id: created.id })))
+    .select();
+  if (itemsError) throw itemsError;
+
+  return { ...created, order_items: insertedItems };
 }
