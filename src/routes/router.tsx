@@ -62,6 +62,9 @@ const categoriesRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '/categories',
   validateSearch: parseCommonSearch,
+  staticData: {
+    breadcrumb: [{ label: 'Home', to: '/' }, { label: 'Categories' }],
+  },
   component: CategoriesPage,
 });
 
@@ -73,18 +76,35 @@ const productsRoute = createRoute({
     category: parseStringParam(search, 'category'),
     active: parseStringParam(search, 'active'),
   }),
+  staticData: {
+    breadcrumb: [{ label: 'Home', to: '/' }, { label: 'Products' }],
+  },
   component: ProductsPage,
 });
 
 const productNewRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '/products/new',
+  staticData: {
+    breadcrumb: [
+      { label: 'Home', to: '/' },
+      { label: 'Products', to: '/products' },
+      { label: 'New product' },
+    ],
+  },
   component: ProductFormPage,
 });
 
 const productEditRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '/products/$productId',
+  staticData: {
+    breadcrumb: [
+      { label: 'Home', to: '/' },
+      { label: 'Products', to: '/products' },
+      { label: 'Edit product' },
+    ],
+  },
   component: ProductFormPage,
 });
 
@@ -95,18 +115,35 @@ const ordersRoute = createRoute({
     ...parseCommonSearch(search),
     status: parseStringParam(search, 'status'),
   }),
+  staticData: {
+    breadcrumb: [{ label: 'Home', to: '/' }, { label: 'Orders' }],
+  },
   component: OrdersPage,
 });
 
 const orderNewRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '/orders/new',
+  staticData: {
+    breadcrumb: [
+      { label: 'Home', to: '/' },
+      { label: 'Orders', to: '/orders' },
+      { label: 'New order' },
+    ],
+  },
   component: OrderNewPage,
 });
 
 const orderDetailRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '/orders/$orderId',
+  staticData: {
+    breadcrumb: [
+      { label: 'Home', to: '/' },
+      { label: 'Orders', to: '/orders' },
+      { label: 'Order details' },
+    ],
+  },
   component: OrderDetailPage,
 });
 

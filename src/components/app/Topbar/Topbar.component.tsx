@@ -2,6 +2,7 @@ import { LogOut, User } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useRouter } from '@tanstack/react-router';
 
+import { ThemeToggle } from '@/components/app/ThemeToggle';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,7 +41,8 @@ export function Topbar() {
         <TooltipContent>Toggle menu</TooltipContent>
       </Tooltip>
       <span className="text-foreground text-sm font-medium">HomeFoods</span>
-      <div className="ml-auto">
+      <div className="ml-auto flex items-center gap-1">
+        <ThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger
             aria-label="Account menu"
