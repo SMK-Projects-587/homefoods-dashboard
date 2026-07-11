@@ -5,11 +5,9 @@ import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CategoriesTable } from '@/features/categories/components/CategoriesTable.component';
 import { CategoryFormDialog } from '@/features/categories/components/CategoryFormDialog.component';
-import { useCategories } from '@/features/categories/hooks/useCategories';
 import type { Category } from '@/features/categories/types';
 
 export function CategoriesPage() {
-  const { data, isPending } = useCategories();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
@@ -34,8 +32,6 @@ export function CategoriesPage() {
       </div>
 
       <CategoriesTable
-        categories={data ?? []}
-        isLoading={isPending}
         onEdit={(category) => {
           setEditingCategory(category);
           setDialogOpen(true);

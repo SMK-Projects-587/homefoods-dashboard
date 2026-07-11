@@ -2,15 +2,17 @@ import { useNavigate } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 
 import { DataTable, type DataTableFilter } from '@/components/app/DataTable';
+import { useTableUrlState } from '@/hooks/useTableUrlState';
 
 import { OrderStatusBadge } from './OrderStatusBadge.component';
 
-import { type Order, ORDER_STATUS_LABEL, ORDER_STATUSES } from '../types';
-
-interface OrdersTableProps {
-  orders: Order[];
-  isLoading: boolean;
-}
+import { useOrdersTable } from '../hooks/useOrders';
+import {
+  type Order,
+  ORDER_STATUS_LABEL,
+  ORDER_STATUSES,
+  type OrderStatus,
+} from '../types';
 
 const STATUS_FILTER: DataTableFilter = {
   columnId: 'status',
@@ -21,36 +23,43 @@ const STATUS_FILTER: DataTableFilter = {
   })),
 };
 
-export function OrdersTable({ orders, isLoading }: OrdersTableProps) {
-  const navigate = useNavigate();
+const columns: ColumnDef<Order, unknown>[] = [
+  { accessorKey: 'order_number', header: 'Order' },
+  { accessorKey: 'customer_name', header: 'Customer' },
+  {
+    accessorKey: 'status',
+    header: 'Status',
+    cell: ({ row }) => <OrderStatusBadge status={row.original.status} />,
+  },
+  {
+    accessorKey: 'total',
+    header: 'Total',
+    cell: ({ row }) => `₹${row.original.total}`,
+  },
+  {
+    accessorKey: 'created_at',
+    header: 'Date',
+    cell: ({ row }) =>
+      new Date(row.original.created_at).toLocaleDateString('en-IN'),
+  },
+];
 
-  const columns: ColumnDef<Order, unknown>[] = [
-    { accessorKey: 'order_number', header: 'Order' },
-    { accessorKey: 'customer_name', header: 'Customer' },
-    {
-      accessorKey: 'status',
-      header: 'Status',
-      filterFn: 'equalsString',
-      cell: ({ row }) => <OrderStatusBadge status={row.original.status} />,
-    },
-    {
-      accessorKey: 'total',
-      header: 'Total',
-      cell: ({ row }) => `₹${row.original.total}`,
-    },
-    {
-      accessorKey: 'created_at',
-      header: 'Date',
-      cell: ({ row }) =>
-        new Date(row.original.created_at).toLocaleDateString('en-IN'),
-    },
-  ];
+export function OrdersTable() {
+  const navigate = useNavigate();
+  const { params, filterValues, controls } = useTableUrlState({
+    defaultSort: { id: 'created_at', desc: true },
+    filterKeys: ['status'],
+  });
+  const query = useOrdersTable({
+    ...params,
+    status: filterValues.status as OrderStatus | undefined,
+  });
 
   return (
     <DataTable
       columns={columns}
-      data={orders}
-      isLoading={isLoading}
+      data={query.data?.rows ?? []}
+      isLoading={query.isPending}
       emptyMessage="No orders yet."
       searchPlaceholder="Search orders…"
       filters={[STATUS_FILTER]}
@@ -74,6 +83,11 @@ export function OrdersTable({ orders, isLoading }: OrdersTableProps) {
           </span>
         </div>
       )}
+      server={{
+        ...controls,
+        pageCount: query.data?.pageCount ?? 1,
+        isFetching: query.isFetching,
+      }}
     />
   );
 }

@@ -1,14 +1,32 @@
 import { toast } from 'sonner';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 
-import { createOrder, getOrder, listOrders, updateOrderStatus } from '../api';
+import {
+  createOrder,
+  getOrder,
+  listOrders,
+  type ListOrdersParams,
+  updateOrderStatus,
+} from '../api';
 import type { OrderInsert, OrderItemInsert, OrderStatus } from '../types';
 
 export const ordersKey = ['orders'] as const;
+export const ordersTableKey = (params: ListOrdersParams) =>
+  ['orders', 'table', params] as const;
 export const orderKey = (id: number) => ['orders', id] as const;
 
-export function useOrders() {
-  return useQuery({ queryKey: ordersKey, queryFn: listOrders });
+/** Paginated list — for the orders table. */
+export function useOrdersTable(params: ListOrdersParams) {
+  return useQuery({
+    queryKey: ordersTableKey(params),
+    queryFn: () => listOrders(params),
+    placeholderData: keepPreviousData,
+  });
 }
 
 export function useOrder(id: number) {

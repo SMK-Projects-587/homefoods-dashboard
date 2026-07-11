@@ -3,11 +3,8 @@ import { Link } from '@tanstack/react-router';
 
 import { Button } from '@/components/ui/button';
 import { OrdersTable } from '@/features/orders/components/OrdersTable.component';
-import { useOrders } from '@/features/orders/hooks/useOrders';
 
 export function OrdersPage() {
-  const { data, isPending } = useOrders();
-
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -25,7 +22,7 @@ export function OrdersPage() {
         </Button>
       </div>
 
-      <OrdersTable orders={data ?? []} isLoading={isPending} />
+      <OrdersTable />
     </div>
   );
 }

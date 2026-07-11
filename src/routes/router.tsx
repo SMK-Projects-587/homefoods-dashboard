@@ -8,6 +8,12 @@ import {
 
 import { AppShell } from '@/components/app/AppShell';
 import { useAuthStore } from '@/features/auth';
+import {
+  type OrdersTableSearch,
+  parseCommonSearch,
+  parseStringParam,
+  type ProductsTableSearch,
+} from '@/lib/tableSearch';
 import { CategoriesPage } from '@/pages/CategoriesPage.page';
 import { DashboardPage } from '@/pages/DashboardPage.page';
 import { LoginPage } from '@/pages/LoginPage.page';
@@ -55,12 +61,18 @@ const indexRoute = createRoute({
 const categoriesRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '/categories',
+  validateSearch: parseCommonSearch,
   component: CategoriesPage,
 });
 
 const productsRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '/products',
+  validateSearch: (search): ProductsTableSearch => ({
+    ...parseCommonSearch(search),
+    category: parseStringParam(search, 'category'),
+    active: parseStringParam(search, 'active'),
+  }),
   component: ProductsPage,
 });
 
@@ -79,6 +91,10 @@ const productEditRoute = createRoute({
 const ordersRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '/orders',
+  validateSearch: (search): OrdersTableSearch => ({
+    ...parseCommonSearch(search),
+    status: parseStringParam(search, 'status'),
+  }),
   component: OrdersPage,
 });
 

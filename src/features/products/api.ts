@@ -1,3 +1,10 @@
+import {
+  type ListParams,
+  type Paginated,
+  rangeFor,
+  resolveSort,
+  toPaginated,
+} from '@/lib/pagination';
 import { supabase } from '@/lib/supabase';
 
 import type {
@@ -13,15 +20,49 @@ import type {
   ProductVariantUpdate,
 } from './types';
 
+export interface ListProductsParams extends ListParams {
+  categoryId?: number;
+  isActive?: boolean;
+}
+
+const PRODUCT_LIST_SELECT =
+  '*, categories(id, name), product_variants(id, title, sku, price, is_default, is_active, in_stock, attributes)';
+const PRODUCT_SORT_COLUMNS = ['name', 'is_active'] as const;
+
+/** Full, unpaginated list — for the order product picker. */
 export async function listProducts(): Promise<ProductListItem[]> {
   const { data, error } = await supabase
     .from('products')
-    .select(
-      '*, categories(id, name), product_variants(id, title, sku, price, is_default, is_active, in_stock, attributes)',
-    )
+    .select(PRODUCT_LIST_SELECT)
     .order('name');
   if (error) throw error;
   return data as ProductListItem[];
+}
+
+/** Server-side filtered/sorted/paginated list — for the products table. */
+export async function listProductsPage(
+  params: ListProductsParams,
+): Promise<Paginated<ProductListItem>> {
+  const { page, pageSize, search, sort, categoryId, isActive } = params;
+  let query = supabase
+    .from('products')
+    .select(PRODUCT_LIST_SELECT, { count: 'exact' });
+
+  const term = search?.trim();
+  if (term) query = query.ilike('name', `%${term}%`);
+  if (categoryId != null) query = query.eq('category_id', categoryId);
+  if (isActive != null) query = query.eq('is_active', isActive);
+
+  const s = resolveSort(sort, PRODUCT_SORT_COLUMNS, {
+    id: 'name',
+    desc: false,
+  });
+  query = query.order(s.id, { ascending: !s.desc });
+
+  const [from, to] = rangeFor(page, pageSize);
+  const { data, error, count } = await query.range(from, to);
+  if (error) throw error;
+  return toPaginated(data as ProductListItem[], count, pageSize);
 }
 
 export async function getProduct(id: number): Promise<ProductDetail> {

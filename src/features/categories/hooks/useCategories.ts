@@ -1,13 +1,37 @@
 import { toast } from 'sonner';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 
-import { createCategory, listCategories, updateCategory } from '../api';
+import type { ListParams } from '@/lib/pagination';
+
+import {
+  createCategory,
+  listCategories,
+  listCategoriesPage,
+  updateCategory,
+} from '../api';
 import type { CategoryInsert, CategoryUpdate } from '../types';
 
 export const categoriesKey = ['categories'] as const;
+export const categoriesTableKey = (params: ListParams) =>
+  ['categories', 'table', params] as const;
 
+/** Full list — for dropdowns. */
 export function useCategories() {
   return useQuery({ queryKey: categoriesKey, queryFn: listCategories });
+}
+
+/** Paginated list — for the categories table. */
+export function useCategoriesTable(params: ListParams) {
+  return useQuery({
+    queryKey: categoriesTableKey(params),
+    queryFn: () => listCategoriesPage(params),
+    placeholderData: keepPreviousData,
+  });
 }
 
 export function useCreateCategory() {

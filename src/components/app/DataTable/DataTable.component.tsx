@@ -9,9 +9,10 @@ import {
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
+  type OnChangeFn,
   type SortingState,
+  useReactTable,
 } from '@tanstack/react-table';
-import { useReactTable } from '@tanstack/react-table';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,6 +39,24 @@ export interface DataTableFilter {
   options: { value: string; label: string }[];
 }
 
+/**
+ * Controlled state for server-driven mode. When provided, the table stops
+ * doing any client-side filtering/sorting/pagination and simply renders the
+ * page of rows it is given, delegating every control to these callbacks.
+ */
+export interface DataTableServer {
+  search: string;
+  onSearchChange: (value: string) => void;
+  filterValues: Record<string, string | undefined>;
+  onFilterChange: (columnId: string, value: string | undefined) => void;
+  sorting: SortingState;
+  onSortingChange: OnChangeFn<SortingState>;
+  pageIndex: number;
+  pageCount: number;
+  onPageChange: (pageIndex: number) => void;
+  isFetching?: boolean;
+}
+
 interface DataTableProps<TData> {
   columns: ColumnDef<TData, unknown>[];
   data: TData[];
@@ -48,6 +67,9 @@ interface DataTableProps<TData> {
   filters?: DataTableFilter[];
   renderMobileCard?: (row: TData) => React.ReactNode;
   pageSize?: number;
+  /** Opt into server-driven filtering/sorting/pagination. */
+  server?: DataTableServer;
+  className?: string;
 }
 
 const ALL = 'all';
@@ -62,7 +84,10 @@ export function DataTable<TData>({
   filters,
   renderMobileCard,
   pageSize = 10,
+  server,
+  className,
 }: DataTableProps<TData>) {
+  const isServer = !!server;
   const [globalFilter, setGlobalFilter] = useState('');
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -70,44 +95,60 @@ export function DataTable<TData>({
   const table = useReactTable({
     data,
     columns,
-    state: { globalFilter, columnFilters, sorting },
-    onGlobalFilterChange: setGlobalFilter,
-    onColumnFiltersChange: setColumnFilters,
-    onSortingChange: setSorting,
+    state: isServer
+      ? { sorting: server.sorting }
+      : { globalFilter, columnFilters, sorting },
+    onGlobalFilterChange: isServer ? undefined : setGlobalFilter,
+    onColumnFiltersChange: isServer ? undefined : setColumnFilters,
+    onSortingChange: isServer ? server.onSortingChange : setSorting,
     globalFilterFn: 'includesString',
+    manualPagination: isServer,
+    manualFiltering: isServer,
+    manualSorting: isServer,
+    pageCount: isServer ? server.pageCount : undefined,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    initialState: { pagination: { pageSize } },
+    getFilteredRowModel: isServer ? undefined : getFilteredRowModel(),
+    getSortedRowModel: isServer ? undefined : getSortedRowModel(),
+    getPaginationRowModel: isServer ? undefined : getPaginationRowModel(),
+    initialState: isServer ? undefined : { pagination: { pageSize } },
   });
 
   const rows = table.getRowModel().rows;
   const hasToolbar = !!searchPlaceholder || !!filters?.length;
-  const pageCount = table.getPageCount();
+  const pageCount = isServer ? server.pageCount : table.getPageCount();
+  const pageIndex = isServer
+    ? server.pageIndex
+    : table.getState().pagination.pageIndex;
+  const searchValue = isServer ? server.search : globalFilter;
+  const onSearch = isServer ? server.onSearchChange : setGlobalFilter;
+  const bodyDimmed = isServer && server.isFetching;
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className={cn('flex flex-col gap-3', className)}>
       {hasToolbar && (
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           {searchPlaceholder && (
             <Input
-              value={globalFilter}
-              onChange={(e) => setGlobalFilter(e.target.value)}
+              value={searchValue}
+              onChange={(e) => onSearch(e.target.value)}
               placeholder={searchPlaceholder}
               className="sm:max-w-64"
             />
           )}
           {filters?.map((filter) => {
             const column = table.getColumn(filter.columnId);
-            const value = (column?.getFilterValue() as string) ?? ALL;
+            const value = isServer
+              ? (server.filterValues[filter.columnId] ?? ALL)
+              : ((column?.getFilterValue() as string) ?? ALL);
             return (
               <Select
                 key={filter.columnId}
                 value={value}
-                onValueChange={(next) =>
-                  column?.setFilterValue(next === ALL ? undefined : next)
-                }
+                onValueChange={(next) => {
+                  const parsed = next === ALL ? undefined : next;
+                  if (isServer) server.onFilterChange(filter.columnId, parsed);
+                  else column?.setFilterValue(parsed);
+                }}
               >
                 <SelectTrigger className="sm:w-44">
                   <SelectValue placeholder={filter.label} />
@@ -127,7 +168,12 @@ export function DataTable<TData>({
       )}
 
       {renderMobileCard && (
-        <div className="flex flex-col gap-2 sm:hidden">
+        <div
+          className={cn(
+            'flex flex-col gap-2 transition-opacity sm:hidden',
+            bodyDimmed && 'opacity-60',
+          )}
+        >
           {isLoading ? (
             <p className="text-muted-foreground py-8 text-center text-sm">
               Loading…
@@ -164,8 +210,9 @@ export function DataTable<TData>({
 
       <div
         className={cn(
-          'border-border overflow-x-auto rounded-md border',
+          'border-border overflow-x-auto rounded-md border transition-opacity',
           renderMobileCard && 'hidden sm:block',
+          bodyDimmed && 'opacity-60',
         )}
       >
         <Table>
@@ -251,15 +298,19 @@ export function DataTable<TData>({
       {pageCount > 1 && (
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">
-            Page {table.getState().pagination.pageIndex + 1} of {pageCount}
+            Page {pageIndex + 1} of {pageCount}
           </span>
           <div className="flex gap-2">
             <Button
               type="button"
               variant="outline"
               size="sm"
-              disabled={!table.getCanPreviousPage()}
-              onClick={() => table.previousPage()}
+              disabled={isServer ? pageIndex <= 0 : !table.getCanPreviousPage()}
+              onClick={() =>
+                isServer
+                  ? server.onPageChange(pageIndex - 1)
+                  : table.previousPage()
+              }
             >
               Previous
             </Button>
@@ -267,8 +318,12 @@ export function DataTable<TData>({
               type="button"
               variant="outline"
               size="sm"
-              disabled={!table.getCanNextPage()}
-              onClick={() => table.nextPage()}
+              disabled={
+                isServer ? pageIndex >= pageCount - 1 : !table.getCanNextPage()
+              }
+              onClick={() =>
+                isServer ? server.onPageChange(pageIndex + 1) : table.nextPage()
+              }
             >
               Next
             </Button>

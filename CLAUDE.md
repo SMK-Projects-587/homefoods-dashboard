@@ -53,6 +53,20 @@ Keep things close to where they're used. Promote to a shared folder only when tw
 - Wrap every `api.ts` function in a TanStack Query hook (`hooks/useX.ts`). Query keys live next to the hooks (`export const xKey = [...]`).
 - Mutations invalidate their own list/detail query keys and show a `sonner` toast on success/error — see `features/categories/hooks/useCategories.ts` for the pattern.
 - Blank `slug`/`sku` fields are intentional: DB triggers auto-generate them. The generated `Insert` types mark these as required strings, so pass `''` explicitly rather than omitting the field.
+- **Never filter/sort/paginate on the client.** Supabase caps a request at 1000 rows by default, so fetching a whole table and filtering in-browser silently truncates and doesn't scale.
+
+## Tables & server-side lists
+
+The three list screens (orders, products, categories) are server-driven. The pieces:
+
+- **`lib/pagination.ts`** — `ListParams` (`{ page, pageSize, search?, sort? }`, `page` is 0-based) in, `Paginated<T>` (`{ rows, total, pageCount }`) out. Helpers: `rangeFor`, `toPaginated`, `resolveSort` (allowlist the sortable columns — see each `api.ts`), `sanitizeSearch` (required before interpolating into a PostgREST `.or()` string).
+- **`api.ts`** — the paginated `listX(params)` uses `.ilike()`/`.or()`, `.eq()`, `.order()`, `.range()`, and `select(..., { count: 'exact' })`. Only allowlisted real columns are sortable (derived/joined columns like product price aren't).
+- **hook** — `useXTable(params)` with `placeholderData: keepPreviousData` for flicker-free paging. Keep the full-list `useX()` hooks too, but **only** for dropdowns/pickers (`CategorySelect`, the order product picker) — never for a table.
+- **`hooks/useTableUrlState.ts`** — single source of truth for page/search/sort/filters, persisted in the route's **URL search params** (debounced search, resets to page 1 on any filter/sort/search change). Returns `params` for the query hook and `controls` for `<DataTable server={...} />`.
+- **`DataTable`** — pass `server={{ ...controls, pageCount, isFetching }}` to switch it into server mode (`manualPagination/Filtering/Sorting`); omit `server` for the client-side mode still used by small in-page tables (`VariantsSection`).
+- **routes** — each list route needs a `validateSearch` (see `lib/tableSearch.ts`). Annotate the return type with an interface whose filter keys are **optional** (`status?: string`), otherwise TanStack treats `search` as required and every `navigate({ to: '/orders' })` breaks.
+
+Known gap: the order product picker (`OrderItemsEditor`) still loads all products via the full-list hook — same latent 1000-row ceiling; paginate/search it when product volume grows.
 
 ## Forms
 

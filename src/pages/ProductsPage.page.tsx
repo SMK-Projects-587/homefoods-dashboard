@@ -3,11 +3,8 @@ import { Link } from '@tanstack/react-router';
 
 import { Button } from '@/components/ui/button';
 import { ProductsTable } from '@/features/products/components/ProductsTable.component';
-import { useProducts } from '@/features/products/hooks/useProducts';
 
 export function ProductsPage() {
-  const { data, isPending } = useProducts();
-
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -25,7 +22,7 @@ export function ProductsPage() {
         </Button>
       </div>
 
-      <ProductsTable products={data ?? []} isLoading={isPending} />
+      <ProductsTable />
     </div>
   );
 }

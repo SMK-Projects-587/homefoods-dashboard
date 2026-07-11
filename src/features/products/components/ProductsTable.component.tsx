@@ -1,18 +1,14 @@
-import { useMemo } from 'react';
-
 import { useNavigate } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 
 import { DataTable, type DataTableFilter } from '@/components/app/DataTable';
 import { Badge } from '@/components/ui/badge';
+import { useCategories } from '@/features/categories';
+import { useTableUrlState } from '@/hooks/useTableUrlState';
 import { cn } from '@/lib/utils';
 
+import { useProductsTable } from '../hooks/useProducts';
 import type { ProductListItem } from '../types';
-
-interface ProductsTableProps {
-  products: ProductListItem[];
-  isLoading: boolean;
-}
 
 function formatPrice(products: ProductListItem) {
   const variants = products.product_variants;
@@ -41,23 +37,59 @@ function StatusBadge({ isActive }: { isActive: boolean }) {
   );
 }
 
-export function ProductsTable({ products, isLoading }: ProductsTableProps) {
+const columns: ColumnDef<ProductListItem, unknown>[] = [
+  { accessorKey: 'name', header: 'Name' },
+  {
+    id: 'category',
+    header: 'Category',
+    enableSorting: false,
+    cell: ({ row }) => row.original.categories?.name ?? '—',
+  },
+  {
+    id: 'variants',
+    header: 'Variants',
+    enableSorting: false,
+    cell: ({ row }) => row.original.product_variants.length,
+  },
+  {
+    id: 'price',
+    header: 'Price',
+    enableSorting: false,
+    cell: ({ row }) => formatPrice(row.original),
+  },
+  {
+    accessorKey: 'is_active',
+    header: 'Status',
+    cell: ({ row }) => <StatusBadge isActive={row.original.is_active} />,
+  },
+];
+
+export function ProductsTable() {
   const navigate = useNavigate();
+  const { params, filterValues, controls } = useTableUrlState({
+    defaultSort: { id: 'name', desc: false },
+    filterKeys: ['category', 'active'],
+  });
+  const query = useProductsTable({
+    ...params,
+    categoryId: filterValues.category
+      ? Number(filterValues.category)
+      : undefined,
+    isActive: filterValues.active ? filterValues.active === 'true' : undefined,
+  });
 
-  const categoryOptions = useMemo(() => {
-    const seen = new Map<string, string>();
-    for (const product of products) {
-      if (product.categories) {
-        seen.set(String(product.categories.id), product.categories.name);
-      }
-    }
-    return Array.from(seen, ([value, label]) => ({ value, label }));
-  }, [products]);
-
+  const { data: categories } = useCategories();
   const filters: DataTableFilter[] = [
-    { columnId: 'category', label: 'Category', options: categoryOptions },
     {
-      columnId: 'is_active',
+      columnId: 'category',
+      label: 'Category',
+      options: (categories ?? []).map((c) => ({
+        value: String(c.id),
+        label: c.name,
+      })),
+    },
+    {
+      columnId: 'active',
       label: 'Status',
       options: [
         { value: 'true', label: 'Active' },
@@ -66,42 +98,11 @@ export function ProductsTable({ products, isLoading }: ProductsTableProps) {
     },
   ];
 
-  const columns: ColumnDef<ProductListItem, unknown>[] = [
-    { accessorKey: 'name', header: 'Name' },
-    {
-      id: 'category',
-      header: 'Category',
-      accessorFn: (row) =>
-        row.categories ? String(row.categories.id) : 'none',
-      cell: ({ row }) => row.original.categories?.name ?? '—',
-      filterFn: 'equalsString',
-    },
-    {
-      id: 'variants',
-      header: 'Variants',
-      enableSorting: false,
-      cell: ({ row }) => row.original.product_variants.length,
-    },
-    {
-      id: 'price',
-      header: 'Price',
-      enableSorting: false,
-      cell: ({ row }) => formatPrice(row.original),
-    },
-    {
-      accessorKey: 'is_active',
-      header: 'Status',
-      filterFn: (row, columnId, filterValue) =>
-        String(row.getValue(columnId)) === filterValue,
-      cell: ({ row }) => <StatusBadge isActive={row.original.is_active} />,
-    },
-  ];
-
   return (
     <DataTable
       columns={columns}
-      data={products}
-      isLoading={isLoading}
+      data={query.data?.rows ?? []}
+      isLoading={query.isPending}
       emptyMessage="No products yet."
       searchPlaceholder="Search products…"
       filters={filters}
@@ -125,6 +126,11 @@ export function ProductsTable({ products, isLoading }: ProductsTableProps) {
           </span>
         </div>
       )}
+      server={{
+        ...controls,
+        pageCount: query.data?.pageCount ?? 1,
+        isFetching: query.isFetching,
+      }}
     />
   );
 }
