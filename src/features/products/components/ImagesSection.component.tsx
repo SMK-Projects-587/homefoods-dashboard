@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 import { Loader2, Star, Trash2, Upload } from 'lucide-react';
 
 import { ConfirmDialog } from '@/components/app/ConfirmDialog';
+import { RemoteImage } from '@/components/app/RemoteImage';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -11,8 +12,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-
-import { ProductImage } from './ProductImage.component';
 
 import {
   useDeleteProductImage,
@@ -72,7 +71,7 @@ export function ImagesSection({ productId, slug, images }: ImagesSectionProps) {
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
             {images.map((image) => (
               <div key={image.id} className="group relative">
-                <ProductImage
+                <RemoteImage
                   imageKey={image.image_path}
                   alt={image.alt_text || slug}
                   className="aspect-square w-full"
