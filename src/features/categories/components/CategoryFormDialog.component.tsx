@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
-import { Loader2, Trash2, Upload } from 'lucide-react';
+import { ImageOff, Loader2, Trash2, Upload } from 'lucide-react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -30,6 +30,7 @@ import type { Category } from '../types';
 const categorySchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string(),
+  image: z.instanceof(File).nullable(),
 });
 
 type CategoryValues = z.infer<typeof categorySchema>;
@@ -105,6 +106,81 @@ function CategoryImageField({ category }: { category: Category }) {
   );
 }
 
+// New-category flow: hold the picked file locally (previewed via an object URL)
+// and hand it to the parent; it's uploaded after the category is created.
+function CategoryImagePicker({
+  onSelect,
+}: {
+  onSelect: (file: File | null) => void;
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState<{ file: File; url: string } | null>(
+    null,
+  );
+
+  useEffect(() => {
+    if (!preview) return;
+    return () => URL.revokeObjectURL(preview.url);
+  }, [preview]);
+
+  const choose = (file: File | null) => {
+    setPreview(file ? { file, url: URL.createObjectURL(file) } : null);
+    onSelect(file);
+  };
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Label>Image</Label>
+      <div className="flex items-center gap-4">
+        {preview ? (
+          <img
+            src={preview.url}
+            alt="Selected category"
+            className="border-border size-20 rounded-md border object-cover"
+          />
+        ) : (
+          <div className="border-border bg-muted text-muted-foreground flex size-20 items-center justify-center rounded-md border border-dashed">
+            <ImageOff className="size-4" />
+          </div>
+        )}
+        <div className="flex flex-col items-start gap-1.5">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              choose(e.target.files?.[0] ?? null);
+              e.target.value = '';
+            }}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Upload className="size-4" />
+            {preview ? 'Change' : 'Select image'}
+          </Button>
+          {preview && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-destructive"
+              onClick={() => choose(null)}
+            >
+              <Trash2 className="size-4" />
+              Remove
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface CategoryFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -125,10 +201,11 @@ export function CategoryFormDialog({
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<CategoryValues>({
     resolver: zodResolver(categorySchema),
-    defaultValues: { name: '', description: '' },
+    defaultValues: { name: '', description: '', image: null },
   });
 
   useEffect(() => {
@@ -136,20 +213,22 @@ export function CategoryFormDialog({
       reset({
         name: category?.name ?? '',
         description: category?.description ?? '',
+        image: null,
       });
     }
   }, [open, category, reset]);
 
-  const onSubmit = (values: CategoryValues) => {
+  // `image` is a create-only form field; strip it from the DB payload.
+  const onSubmit = ({ image, ...input }: CategoryValues) => {
     if (isEditing) {
       updateMutation.mutate(
-        { id: category.id, input: values },
+        { id: category.id, input },
         { onSuccess: () => onOpenChange(false) },
       );
     } else {
       // slug is left blank on purpose — a DB trigger slugifies the name.
       createMutation.mutate(
-        { ...values, slug: '' },
+        { input: { ...input, slug: '' }, imageFile: image },
         { onSuccess: () => onOpenChange(false) },
       );
     }
@@ -174,8 +253,10 @@ export function CategoryFormDialog({
           className="flex flex-col gap-4"
           noValidate
         >
-          {category && (
+          {category ? (
             <CategoryImageField key={category.id} category={category} />
+          ) : (
+            <CategoryImagePicker onSelect={(file) => setValue('image', file)} />
           )}
 
           <div className="flex flex-col gap-1.5">

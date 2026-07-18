@@ -35,10 +35,31 @@ export function useCategoriesTable(params: ListParams) {
   });
 }
 
+// A new category has no id/slug until it exists, so an optional image is
+// uploaded in a second step: create -> upload -> point image_path at it.
 export function useCreateCategory() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: CategoryInsert) => createCategory(input),
+    mutationFn: async ({
+      input,
+      imageFile,
+    }: {
+      input: CategoryInsert;
+      imageFile?: File | null;
+    }) => {
+      const created = await createCategory(input);
+      if (imageFile) {
+        try {
+          const key = buildImageKey('categories', created.slug, imageFile);
+          await uploadImage(key, imageFile);
+          return await updateCategory(created.id, { image_path: key });
+        } catch {
+          // The category was created; its image can be added later via edit.
+          toast.warning('Category created, but the image upload failed');
+        }
+      }
+      return created;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: categoriesKey });
       toast.success('Category created');
