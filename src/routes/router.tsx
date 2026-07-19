@@ -2,11 +2,13 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
+  lazyRouteComponent,
   Outlet,
   redirect,
 } from '@tanstack/react-router';
 
 import { AppShell } from '@/components/app/AppShell';
+import { RouteLoadingFallback } from '@/components/app/RouteLoadingFallback';
 import { useAuthStore } from '@/features/auth';
 import {
   type OrdersTableSearch,
@@ -14,15 +16,13 @@ import {
   parseStringParam,
   type ProductsTableSearch,
 } from '@/lib/tableSearch';
-import { CategoriesPage } from '@/pages/CategoriesPage.page';
-import { DashboardPage } from '@/pages/DashboardPage.page';
-import { LoginPage } from '@/pages/LoginPage.page';
-import { OrderDetailPage } from '@/pages/OrderDetailPage.page';
-import { OrderEditPage } from '@/pages/OrderEditPage.page';
-import { OrderNewPage } from '@/pages/OrderNewPage.page';
-import { OrdersPage } from '@/pages/OrdersPage.page';
-import { ProductFormPage } from '@/pages/ProductFormPage.page';
-import { ProductsPage } from '@/pages/ProductsPage.page';
+
+// Every page is its own chunk (see lazyRouteComponent below) rather than one
+// eagerly-imported bundle — this is a staff dashboard meant to be opened on
+// a phone on the shop floor, so first-load JS size over a mobile connection
+// matters. `defaultPreload: 'intent'` (below) fetches a page's chunk on
+// hover/focus of its Link, so in practice most navigations never show
+// `RouteLoadingFallback` at all.
 
 const rootRoute = createRootRoute({
   component: () => <Outlet />,
@@ -39,7 +39,10 @@ const loginRoute = createRoute({
       throw redirect({ to: '/' });
     }
   },
-  component: LoginPage,
+  component: lazyRouteComponent(
+    () => import('@/pages/LoginPage.page'),
+    'LoginPage',
+  ),
 });
 
 const authenticatedRoute = createRoute({
@@ -56,7 +59,10 @@ const authenticatedRoute = createRoute({
 const indexRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '/',
-  component: DashboardPage,
+  component: lazyRouteComponent(
+    () => import('@/pages/DashboardPage.page'),
+    'DashboardPage',
+  ),
 });
 
 const categoriesRoute = createRoute({
@@ -66,7 +72,10 @@ const categoriesRoute = createRoute({
   staticData: {
     breadcrumb: [{ label: 'Home', to: '/' }, { label: 'Categories' }],
   },
-  component: CategoriesPage,
+  component: lazyRouteComponent(
+    () => import('@/pages/CategoriesPage.page'),
+    'CategoriesPage',
+  ),
 });
 
 const productsRoute = createRoute({
@@ -80,7 +89,10 @@ const productsRoute = createRoute({
   staticData: {
     breadcrumb: [{ label: 'Home', to: '/' }, { label: 'Products' }],
   },
-  component: ProductsPage,
+  component: lazyRouteComponent(
+    () => import('@/pages/ProductsPage.page'),
+    'ProductsPage',
+  ),
 });
 
 const productNewRoute = createRoute({
@@ -93,7 +105,10 @@ const productNewRoute = createRoute({
       { label: 'New product' },
     ],
   },
-  component: ProductFormPage,
+  component: lazyRouteComponent(
+    () => import('@/pages/ProductFormPage.page'),
+    'ProductFormPage',
+  ),
 });
 
 const productEditRoute = createRoute({
@@ -106,7 +121,10 @@ const productEditRoute = createRoute({
       { label: 'Edit product' },
     ],
   },
-  component: ProductFormPage,
+  component: lazyRouteComponent(
+    () => import('@/pages/ProductFormPage.page'),
+    'ProductFormPage',
+  ),
 });
 
 const ordersRoute = createRoute({
@@ -115,11 +133,16 @@ const ordersRoute = createRoute({
   validateSearch: (search): OrdersTableSearch => ({
     ...parseCommonSearch(search),
     status: parseStringParam(search, 'status'),
+    dateFrom: parseStringParam(search, 'dateFrom'),
+    dateTo: parseStringParam(search, 'dateTo'),
   }),
   staticData: {
     breadcrumb: [{ label: 'Home', to: '/' }, { label: 'Orders' }],
   },
-  component: OrdersPage,
+  component: lazyRouteComponent(
+    () => import('@/pages/OrdersPage.page'),
+    'OrdersPage',
+  ),
 });
 
 const orderNewRoute = createRoute({
@@ -132,7 +155,10 @@ const orderNewRoute = createRoute({
       { label: 'New order' },
     ],
   },
-  component: OrderNewPage,
+  component: lazyRouteComponent(
+    () => import('@/pages/OrderNewPage.page'),
+    'OrderNewPage',
+  ),
 });
 
 const orderDetailRoute = createRoute({
@@ -145,7 +171,10 @@ const orderDetailRoute = createRoute({
       { label: 'Order details' },
     ],
   },
-  component: OrderDetailPage,
+  component: lazyRouteComponent(
+    () => import('@/pages/OrderDetailPage.page'),
+    'OrderDetailPage',
+  ),
 });
 
 const orderEditRoute = createRoute({
@@ -158,7 +187,10 @@ const orderEditRoute = createRoute({
       { label: 'Edit order' },
     ],
   },
-  component: OrderEditPage,
+  component: lazyRouteComponent(
+    () => import('@/pages/OrderEditPage.page'),
+    'OrderEditPage',
+  ),
 });
 
 const routeTree = rootRoute.addChildren([
@@ -179,6 +211,7 @@ const routeTree = rootRoute.addChildren([
 export const router = createRouter({
   routeTree,
   defaultPreload: 'intent',
+  defaultPendingComponent: RouteLoadingFallback,
 });
 
 declare module '@tanstack/react-router' {

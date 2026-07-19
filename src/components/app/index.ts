@@ -4,5 +4,6 @@ export * from './Breadcrumbs';
 export * from './ConfirmDialog';
 export * from './DataTable';
 export * from './RemoteImage';
+export * from './RouteLoadingFallback';
 export * from './ThemeToggle';
 export * from './Topbar';

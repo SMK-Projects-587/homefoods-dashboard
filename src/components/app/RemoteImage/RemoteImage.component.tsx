@@ -53,6 +53,8 @@ export function RemoteImage({
       <img
         src={url}
         alt={alt}
+        loading="lazy"
+        decoding="async"
         onError={() => setFailed(true)}
         className={cn(
           'border-border rounded-md border object-cover',
@@ -76,6 +78,8 @@ export function RemoteImage({
         <img
           src={url}
           alt={alt}
+          loading="lazy"
+          decoding="async"
           onError={() => setFailed(true)}
           className="h-full w-full object-cover"
         />
@@ -87,6 +91,7 @@ export function RemoteImage({
           <img
             src={url}
             alt={alt}
+            decoding="async"
             className="max-h-[85vh] w-full rounded-md object-contain"
           />
         </DialogContent>
