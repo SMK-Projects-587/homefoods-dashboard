@@ -23,6 +23,10 @@ import {
 
 export interface ListOrdersParams extends ListParams {
   status?: OrderStatus;
+  /** ISO `YYYY-MM-DD`, inclusive — orders created on or after this date. */
+  dateFrom?: string;
+  /** ISO `YYYY-MM-DD`, inclusive — orders created on or before this date. */
+  dateTo?: string;
 }
 
 const ORDER_SORT_COLUMNS = [
@@ -37,7 +41,7 @@ const ORDER_SORT_COLUMNS = [
 export async function listOrders(
   params: ListOrdersParams,
 ): Promise<Paginated<Order>> {
-  const { page, pageSize, search, sort, status } = params;
+  const { page, pageSize, search, sort, status, dateFrom, dateTo } = params;
   let query = supabase.from('orders').select('*', { count: 'exact' });
 
   const term = sanitizeSearch(search);
@@ -47,6 +51,15 @@ export async function listOrders(
     );
   }
   if (status) query = query.eq('status', status);
+  if (dateFrom) query = query.gte('created_at', dateFrom);
+  if (dateTo) {
+    // Exclusive upper bound on the *next* day — created_at is a timestamp,
+    // so a plain `.lte('created_at', dateTo)` would only match midnight of
+    // that day and exclude every order actually placed on it.
+    const exclusiveEnd = new Date(dateTo);
+    exclusiveEnd.setUTCDate(exclusiveEnd.getUTCDate() + 1);
+    query = query.lt('created_at', exclusiveEnd.toISOString().slice(0, 10));
+  }
 
   const s = resolveSort(sort, ORDER_SORT_COLUMNS, {
     id: 'created_at',

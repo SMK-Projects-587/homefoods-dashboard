@@ -28,6 +28,13 @@ interface UseTableUrlStateResult {
   params: ListParams;
   filterValues: Record<string, string | undefined>;
   controls: TableServerControls;
+  /**
+   * Set multiple filter keys atomically (e.g. a date range's `from`/`to`
+   * together) — two sequential `controls.onFilterChange` calls would each
+   * navigate off the same stale `prev` search snapshot and the first write
+   * could get clobbered by the second.
+   */
+  setFilters: (patch: Record<string, string | undefined>) => void;
 }
 
 /**
@@ -100,12 +107,14 @@ export function useTableUrlState({
     });
   };
 
+  const setFilters = (patch: Record<string, string | undefined>) =>
+    updateSearch({ ...patch, page: undefined });
+
   const controls: TableServerControls = {
     search: searchInput,
     onSearchChange: setSearchInput,
     filterValues,
-    onFilterChange: (columnId, value) =>
-      updateSearch({ [columnId]: value, page: undefined }),
+    onFilterChange: (columnId, value) => setFilters({ [columnId]: value }),
     sorting,
     onSortingChange,
     pageIndex: urlPage - 1,
@@ -119,5 +128,5 @@ export function useTableUrlState({
     sort,
   };
 
-  return { params, filterValues, controls };
+  return { params, filterValues, controls, setFilters };
 }

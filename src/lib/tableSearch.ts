@@ -9,6 +9,10 @@ export interface CommonTableSearch {
 
 export interface OrdersTableSearch extends CommonTableSearch {
   status?: string;
+  /** ISO `YYYY-MM-DD`, inclusive — orders created on or after this date. */
+  dateFrom?: string;
+  /** ISO `YYYY-MM-DD`, inclusive — orders created on or before this date. */
+  dateTo?: string;
 }
 
 export interface ProductsTableSearch extends CommonTableSearch {

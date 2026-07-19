@@ -22,6 +22,7 @@ import {
   type OrderShippingAddress,
   type OrderStatus,
 } from '@/features/orders/types';
+import { formatDateTime } from '@/lib/utils';
 
 export function OrderDetailPage() {
   const { orderId } = useParams({ strict: false });
@@ -60,7 +61,7 @@ export function OrderDetailPage() {
               {order.order_number}
             </h1>
             <p className="text-muted-foreground text-sm">
-              {new Date(order.created_at).toLocaleString('en-IN')}
+              {formatDateTime(order.created_at)}
             </p>
           </div>
         </div>

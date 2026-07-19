@@ -3,7 +3,9 @@ import type { ColumnDef } from '@tanstack/react-table';
 
 import { DataTable, type DataTableFilter } from '@/components/app/DataTable';
 import { useTableUrlState } from '@/hooks/useTableUrlState';
+import { formatDate } from '@/lib/utils';
 
+import { OrdersDateRangeFilter } from './OrdersDateRangeFilter.component';
 import { OrderStatusBadge } from './OrderStatusBadge.component';
 
 import { useOrdersTable } from '../hooks/useOrders';
@@ -39,20 +41,21 @@ const columns: ColumnDef<Order, unknown>[] = [
   {
     accessorKey: 'created_at',
     header: 'Date',
-    cell: ({ row }) =>
-      new Date(row.original.created_at).toLocaleDateString('en-IN'),
+    cell: ({ row }) => formatDate(row.original.created_at),
   },
 ];
 
 export function OrdersTable() {
   const navigate = useNavigate();
-  const { params, filterValues, controls } = useTableUrlState({
+  const { params, filterValues, controls, setFilters } = useTableUrlState({
     defaultSort: { id: 'created_at', desc: true },
-    filterKeys: ['status'],
+    filterKeys: ['status', 'dateFrom', 'dateTo'],
   });
   const query = useOrdersTable({
     ...params,
     status: filterValues.status as OrderStatus | undefined,
+    dateFrom: filterValues.dateFrom,
+    dateTo: filterValues.dateTo,
   });
 
   return (
@@ -63,6 +66,13 @@ export function OrdersTable() {
       emptyMessage="No orders yet."
       searchPlaceholder="Search orders…"
       filters={[STATUS_FILTER]}
+      toolbarExtra={
+        <OrdersDateRangeFilter
+          dateFrom={filterValues.dateFrom}
+          dateTo={filterValues.dateTo}
+          onChange={(dateFrom, dateTo) => setFilters({ dateFrom, dateTo })}
+        />
+      }
       onRowClick={(order) =>
         navigate({
           to: '/orders/$orderId',
@@ -79,7 +89,7 @@ export function OrdersTable() {
           </div>
           <span className="text-muted-foreground text-xs">
             {order.customer_name} · ₹{order.total} ·{' '}
-            {new Date(order.created_at).toLocaleDateString('en-IN')}
+            {formatDate(order.created_at)}
           </span>
         </div>
       )}

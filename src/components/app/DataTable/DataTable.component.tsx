@@ -65,6 +65,8 @@ interface DataTableProps<TData> {
   onRowClick?: (row: TData) => void;
   searchPlaceholder?: string;
   filters?: DataTableFilter[];
+  /** Extra toolbar content (e.g. a date-range filter) rendered after the filter dropdowns. */
+  toolbarExtra?: React.ReactNode;
   renderMobileCard?: (row: TData) => React.ReactNode;
   pageSize?: number;
   /** Opt into server-driven filtering/sorting/pagination. */
@@ -82,6 +84,7 @@ export function DataTable<TData>({
   onRowClick,
   searchPlaceholder,
   filters,
+  toolbarExtra,
   renderMobileCard,
   pageSize = 10,
   server,
@@ -114,7 +117,7 @@ export function DataTable<TData>({
   });
 
   const rows = table.getRowModel().rows;
-  const hasToolbar = !!searchPlaceholder || !!filters?.length;
+  const hasToolbar = !!searchPlaceholder || !!filters?.length || !!toolbarExtra;
   const pageCount = isServer ? server.pageCount : table.getPageCount();
   const pageIndex = isServer
     ? server.pageIndex
@@ -164,6 +167,7 @@ export function DataTable<TData>({
               </Select>
             );
           })}
+          {toolbarExtra}
         </div>
       )}
 

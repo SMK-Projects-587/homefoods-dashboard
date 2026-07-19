@@ -1,6 +1,7 @@
 import { ArrowRight } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatDateTime } from '@/lib/utils';
 
 import { OrderStatusBadge } from './OrderStatusBadge.component';
 
@@ -39,7 +40,7 @@ export function OrderStatusHistoryCard({
               <p className="text-muted-foreground">Reason: {entry.reason}</p>
             )}
             <p className="text-muted-foreground text-xs">
-              {new Date(entry.created_at).toLocaleString('en-IN')}
+              {formatDateTime(entry.created_at)}
             </p>
           </div>
         ))}
