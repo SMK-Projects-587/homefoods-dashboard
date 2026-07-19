@@ -10,6 +10,7 @@ import {
 import {
   createProduct,
   getProduct,
+  getVariantsBySkus,
   listProductsPage,
   type ListProductsParams,
   updateProduct,
@@ -83,6 +84,14 @@ export function useUpdateProduct(id: number) {
       queryClient.invalidateQueries({ queryKey: productKey(id) });
       toast.success('Product saved');
     },
+    onError: (error: Error) => toast.error(error.message),
+  });
+}
+
+/** One-off batched SKU → variant resolution, for the order-from-template flow. */
+export function useLookupVariantsBySku() {
+  return useMutation({
+    mutationFn: (skus: string[]) => getVariantsBySkus(skus),
     onError: (error: Error) => toast.error(error.message),
   });
 }

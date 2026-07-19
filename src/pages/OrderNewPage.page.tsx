@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 
@@ -9,11 +11,32 @@ import {
 } from '@/features/orders/components/OrderForm.component';
 import { type OrderItemDraft } from '@/features/orders/components/OrderItemsEditor.component';
 import { useCreateOrder } from '@/features/orders/hooks/useOrders';
+import { useOrderDraftStore } from '@/features/orders/store';
 import type { Json } from '@/types/database';
 
 export function OrderNewPage() {
   const navigate = useNavigate();
   const createMutation = useCreateOrder();
+  const [draft] = useState(() => useOrderDraftStore.getState().takeDraft());
+
+  const initialItems = draft?.items ?? [];
+  const initialValues: Partial<OrderFormValues> | undefined = draft
+    ? {
+        ...(draft.customer && {
+          customerName: draft.customer.name,
+          customerPhone: draft.customer.phone,
+          customerEmail: draft.customer.email,
+        }),
+        ...(draft.address && {
+          line1: draft.address.line1,
+          line2: draft.address.line2,
+          city: draft.address.city,
+          state: draft.address.state,
+          postalCode: draft.address.postalCode,
+          country: draft.address.country,
+        }),
+      }
+    : undefined;
 
   const handleSubmit = (values: OrderFormValues, items: OrderItemDraft[]) => {
     const subtotal = items.reduce(
@@ -98,7 +121,11 @@ export function OrderNewPage() {
         </Button>
       </div>
 
-      <OrderForm onSubmit={handleSubmit} />
+      <OrderForm
+        onSubmit={handleSubmit}
+        initialItems={initialItems}
+        initialValues={initialValues}
+      />
     </div>
   );
 }

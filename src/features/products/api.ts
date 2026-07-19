@@ -18,6 +18,7 @@ import type {
   ProductVariant,
   ProductVariantInsert,
   ProductVariantUpdate,
+  VariantBySku,
 } from './types';
 
 export interface ListProductsParams extends ListParams {
@@ -63,6 +64,18 @@ export async function getProduct(id: number): Promise<ProductDetail> {
     .single();
   if (error) throw error;
   return data as ProductDetail;
+}
+
+export async function getVariantsBySkus(
+  skus: string[],
+): Promise<VariantBySku[]> {
+  if (skus.length === 0) return [];
+  const { data, error } = await supabase
+    .from('product_variants')
+    .select('id, sku, title, price, attributes, products(id, name)')
+    .in('sku', skus);
+  if (error) throw error;
+  return data as VariantBySku[];
 }
 
 export async function createProduct(input: ProductInsert): Promise<Product> {

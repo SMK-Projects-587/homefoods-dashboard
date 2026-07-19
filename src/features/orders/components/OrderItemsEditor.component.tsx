@@ -22,7 +22,10 @@ import {
 import { ProductCombobox, type ProductListItem } from '@/features/products';
 
 export interface OrderItemDraft {
-  variantId: number;
+  // Nullable so a pre-fill (edit) can carry an item whose variant was later
+  // deleted from the catalog — the order_items.variant_id FK is itself
+  // nullable (`on delete set null`) for exactly this reason.
+  variantId: number | null;
   productName: string;
   variantTitle: string;
   sku: string;

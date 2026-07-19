@@ -18,6 +18,7 @@ import { CategoriesPage } from '@/pages/CategoriesPage.page';
 import { DashboardPage } from '@/pages/DashboardPage.page';
 import { LoginPage } from '@/pages/LoginPage.page';
 import { OrderDetailPage } from '@/pages/OrderDetailPage.page';
+import { OrderEditPage } from '@/pages/OrderEditPage.page';
 import { OrderNewPage } from '@/pages/OrderNewPage.page';
 import { OrdersPage } from '@/pages/OrdersPage.page';
 import { ProductFormPage } from '@/pages/ProductFormPage.page';
@@ -147,6 +148,19 @@ const orderDetailRoute = createRoute({
   component: OrderDetailPage,
 });
 
+const orderEditRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/orders/$orderId/edit',
+  staticData: {
+    breadcrumb: [
+      { label: 'Home', to: '/' },
+      { label: 'Orders', to: '/orders' },
+      { label: 'Edit order' },
+    ],
+  },
+  component: OrderEditPage,
+});
+
 const routeTree = rootRoute.addChildren([
   loginRoute,
   authenticatedRoute.addChildren([
@@ -158,6 +172,7 @@ const routeTree = rootRoute.addChildren([
     ordersRoute,
     orderNewRoute,
     orderDetailRoute,
+    orderEditRoute,
   ]),
 ]);
 

@@ -26,6 +26,13 @@ export interface ProductListItem extends Product {
   >[];
 }
 
+export interface VariantBySku extends Pick<
+  ProductVariant,
+  'id' | 'sku' | 'title' | 'price' | 'attributes'
+> {
+  products: { id: number; name: string } | null;
+}
+
 export interface ProductDetail extends Product {
   categories: { id: number; name: string } | null;
   product_variants: ProductVariant[];

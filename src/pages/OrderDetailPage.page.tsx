@@ -1,5 +1,5 @@
-import { ArrowLeft } from 'lucide-react';
-import { useNavigate, useParams } from '@tanstack/react-router';
+import { ArrowLeft, Pencil } from 'lucide-react';
+import { Link, useNavigate, useParams } from '@tanstack/react-router';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,16 +12,16 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { OrderStatusSelect } from '@/features/orders/components/OrderStatusSelect.component';
+import { DuplicateOrderButton } from '@/features/orders/components/DuplicateOrderButton.component';
+import { OrderStatusActions } from '@/features/orders/components/OrderStatusActions.component';
+import { OrderStatusHistoryCard } from '@/features/orders/components/OrderStatusHistoryCard.component';
+import { PaymentStatusSelect } from '@/features/orders/components/PaymentStatusSelect.component';
 import { useOrder } from '@/features/orders/hooks/useOrders';
-
-interface ShippingAddress {
-  line1?: string;
-  line2?: string;
-  city?: string;
-  state?: string;
-  postal_code?: string;
-}
+import {
+  isOrderEditable,
+  type OrderShippingAddress,
+  type OrderStatus,
+} from '@/features/orders/types';
 
 export function OrderDetailPage() {
   const { orderId } = useParams({ strict: false });
@@ -40,8 +40,9 @@ export function OrderDetailPage() {
 
   if (!order) return null;
 
-  const address = (order.shipping_address ?? {}) as ShippingAddress;
+  const address = (order.shipping_address ?? {}) as OrderShippingAddress;
   const hasAddress = address.line1 || address.city;
+  const status = order.status as OrderStatus;
 
   return (
     <div className="flex flex-col gap-6">
@@ -63,7 +64,22 @@ export function OrderDetailPage() {
             </p>
           </div>
         </div>
-        <OrderStatusSelect orderId={order.id} status={order.status} />
+
+        <div className="flex flex-wrap items-center gap-2">
+          {isOrderEditable(order.status) && (
+            <Button asChild variant="outline">
+              <Link
+                to="/orders/$orderId/edit"
+                params={{ orderId: String(order.id) }}
+              >
+                <Pencil className="size-4" />
+                Edit
+              </Link>
+            </Button>
+          )}
+          <DuplicateOrderButton order={order} />
+          <OrderStatusActions orderId={order.id} status={status} />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -100,6 +116,18 @@ export function OrderDetailPage() {
             ) : (
               <p>No address on file.</p>
             )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Payment</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <PaymentStatusSelect
+              orderId={order.id}
+              paymentStatus={order.payment_status}
+            />
           </CardContent>
         </Card>
       </div>
@@ -191,6 +219,8 @@ export function OrderDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      <OrderStatusHistoryCard orderId={order.id} />
     </div>
   );
 }

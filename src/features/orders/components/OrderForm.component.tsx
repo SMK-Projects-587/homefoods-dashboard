@@ -44,9 +44,17 @@ export type OrderFormValues = z.infer<typeof orderFormSchema>;
 
 interface OrderFormProps {
   onSubmit: (values: OrderFormValues, items: OrderItemDraft[]) => void;
+  initialItems?: OrderItemDraft[];
+  /** Pre-fills fields for "duplicate order" and "edit order" — merged over
+   *  the blank defaults below, only the keys present are overridden. */
+  initialValues?: Partial<OrderFormValues>;
 }
 
-export function OrderForm({ onSubmit }: OrderFormProps) {
+export function OrderForm({
+  onSubmit,
+  initialItems = [],
+  initialValues,
+}: OrderFormProps) {
   const {
     register,
     handleSubmit,
@@ -67,10 +75,11 @@ export function OrderForm({ onSubmit }: OrderFormProps) {
       notes: '',
       discount: '0',
       shippingFee: '0',
+      ...initialValues,
     },
   });
 
-  const [items, setItems] = useState<OrderItemDraft[]>([]);
+  const [items, setItems] = useState<OrderItemDraft[]>(initialItems);
   const [itemsError, setItemsError] = useState('');
 
   const discount = Number(watch('discount')) || 0;
