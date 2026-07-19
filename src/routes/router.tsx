@@ -193,6 +193,19 @@ const orderEditRoute = createRoute({
   ),
 });
 
+const invoicesRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/invoices',
+  validateSearch: parseCommonSearch,
+  staticData: {
+    breadcrumb: [{ label: 'Home', to: '/' }, { label: 'Invoices' }],
+  },
+  component: lazyRouteComponent(
+    () => import('@/pages/InvoicesPage.page'),
+    'InvoicesPage',
+  ),
+});
+
 const routeTree = rootRoute.addChildren([
   loginRoute,
   authenticatedRoute.addChildren([
@@ -205,6 +218,7 @@ const routeTree = rootRoute.addChildren([
     orderNewRoute,
     orderDetailRoute,
     orderEditRoute,
+    invoicesRoute,
   ]),
 ]);
 

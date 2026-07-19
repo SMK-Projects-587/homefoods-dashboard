@@ -56,3 +56,10 @@ export async function getImageDownloadUrl(key: string): Promise<string> {
 export async function deleteImage(key: string): Promise<void> {
   await presign('delete', 'images', key);
 }
+
+// Unlike images, the invoices bucket is private — this returns a signed GET,
+// not a plain public URL.
+export async function getInvoiceDownloadUrl(key: string): Promise<string> {
+  const { url } = await presign('download', 'invoices', key);
+  return url;
+}

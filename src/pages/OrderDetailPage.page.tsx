@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { InvoiceCard } from '@/features/invoices/components/InvoiceCard.component';
 import { DuplicateOrderButton } from '@/features/orders/components/DuplicateOrderButton.component';
 import { OrderStatusActions } from '@/features/orders/components/OrderStatusActions.component';
 import { OrderStatusHistoryCard } from '@/features/orders/components/OrderStatusHistoryCard.component';
@@ -131,6 +132,12 @@ export function OrderDetailPage() {
             />
           </CardContent>
         </Card>
+
+        <InvoiceCard
+          orderId={order.id}
+          orderStatus={status}
+          paymentStatus={order.payment_status}
+        />
       </div>
 
       {order.notes && (
