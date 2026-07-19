@@ -76,15 +76,18 @@ export interface UpdateOrderStatusParams {
   toStatus: OrderStatus;
   /** Required (and only used) for `toStatus === 'cancelled'`. */
   reason?: string | null;
-  /** Current authenticated user's id — recorded on the history row. */
-  changedBy?: string | null;
 }
 
 /**
  * Transitions `orders.status` and writes a matching `order_status_history`
- * row in the same call. Validates the transition against
- * `ORDER_STATUS_TRANSITIONS` before writing anything — defense in depth on
- * top of the UI only ever offering valid actions (see
+ * row atomically, via the `update_order_status` Postgres function (see
+ * supabase/migrations/20260719130000_atomic_order_status_history.sql in the
+ * homefoods schema repo) — one RPC call/transaction, so a history row can
+ * never go missing because a second client-side write failed. `changed_by`
+ * is derived server-side from the caller's auth session (`auth.uid()`), not
+ * passed by the client. Validates the transition against
+ * `ORDER_STATUS_TRANSITIONS` before calling it — defense in depth on top of
+ * the UI only ever offering valid actions (see
  * `OrderStatusActions.component.tsx`).
  */
 export async function updateOrderStatus({
@@ -92,7 +95,6 @@ export async function updateOrderStatus({
   fromStatus,
   toStatus,
   reason,
-  changedBy,
 }: UpdateOrderStatusParams): Promise<Order> {
   if (!ORDER_STATUS_TRANSITIONS[fromStatus].includes(toStatus)) {
     throw new Error(
@@ -103,31 +105,14 @@ export async function updateOrderStatus({
     throw new Error('A reason is required to cancel an order.');
   }
 
-  // .eq('status', fromStatus) closes a race between two staff transitioning
-  // the same order at once: if the row's status already moved on, this
-  // matches zero rows and .single() below throws instead of silently
-  // applying a transition (and history row) on top of a stale fromStatus.
-  const { data, error } = await supabase
-    .from('orders')
-    .update({ status: toStatus })
-    .eq('id', id)
-    .eq('status', fromStatus)
-    .select()
-    .single();
+  const { data, error } = await supabase.rpc('update_order_status', {
+    p_order_id: id,
+    p_from_status: fromStatus,
+    p_to_status: toStatus,
+    p_reason: toStatus === 'cancelled' ? reason?.trim() : undefined,
+  });
   if (error) throw error;
-
-  const { error: historyError } = await supabase
-    .from('order_status_history')
-    .insert({
-      order_id: id,
-      from_status: fromStatus,
-      to_status: toStatus,
-      reason: toStatus === 'cancelled' ? (reason?.trim() ?? null) : null,
-      changed_by: changedBy ?? null,
-    });
-  if (historyError) throw historyError;
-
-  return data;
+  return data as Order;
 }
 
 export async function getOrderStatusHistory(

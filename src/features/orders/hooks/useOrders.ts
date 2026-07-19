@@ -60,7 +60,6 @@ export interface UpdateOrderStatusInput {
   fromStatus: OrderStatus;
   toStatus: OrderStatus;
   reason?: string | null;
-  changedBy?: string | null;
 }
 
 export function useUpdateOrderStatus(id: number) {

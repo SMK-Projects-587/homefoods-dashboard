@@ -2,7 +2,6 @@ import { useState } from 'react';
 
 import { ConfirmDialog } from '@/components/app/ConfirmDialog';
 import { Button } from '@/components/ui/button';
-import { useAuthStore } from '@/features/auth';
 import { cn } from '@/lib/utils';
 
 import { CancelOrderDialog } from './CancelOrderDialog.component';
@@ -38,10 +37,6 @@ export function OrderStatusActions({
   className,
 }: OrderStatusActionsProps) {
   const mutation = useUpdateOrderStatus(orderId);
-  // order_status_history.changed_by is `uuid references auth.users(id)`
-  // (see supabase/migrations/20260719120000_order_status_lifecycle.sql), so
-  // only the auth user id — never the email — is a valid value here.
-  const changedBy = useAuthStore((s) => s.session?.user?.id ?? null);
   const [confirmTarget, setConfirmTarget] = useState<OrderStatus | null>(null);
   const [cancelOpen, setCancelOpen] = useState(false);
 
@@ -50,7 +45,7 @@ export function OrderStatusActions({
 
   const runTransition = (toStatus: OrderStatus, reason: string | null) => {
     mutation.mutate(
-      { fromStatus: status, toStatus, reason, changedBy },
+      { fromStatus: status, toStatus, reason },
       {
         onSuccess: () => {
           setConfirmTarget(null);

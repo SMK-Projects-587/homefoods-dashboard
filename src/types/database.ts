@@ -40,6 +40,7 @@ export type Database = {
           description: string;
           id: number;
           image_path: string;
+          is_active: boolean;
           name: string;
           slug: string;
           updated_at: string;
@@ -49,6 +50,7 @@ export type Database = {
           description?: string;
           id?: never;
           image_path?: string;
+          is_active?: boolean;
           name: string;
           slug: string;
           updated_at?: string;
@@ -58,6 +60,7 @@ export type Database = {
           description?: string;
           id?: never;
           image_path?: string;
+          is_active?: boolean;
           name?: string;
           slug?: string;
           updated_at?: string;
@@ -471,6 +474,7 @@ export type Database = {
           in_stock_filter?: boolean;
           max_results?: number;
           offset_by?: number;
+          require_variant?: boolean;
           term: string;
         };
         Returns: {
@@ -491,6 +495,39 @@ export type Database = {
         }[];
       };
       slugify: { Args: { input: string }; Returns: string };
+      update_order_status: {
+        Args: {
+          p_from_status: string;
+          p_order_id: number;
+          p_reason?: string;
+          p_to_status: string;
+        };
+        Returns: {
+          created_at: string;
+          created_by: string | null;
+          customer_email: string;
+          customer_name: string;
+          customer_phone: string;
+          discount: number;
+          id: number;
+          notes: string;
+          order_number: string;
+          payment_status: string | null;
+          shipping_address: Json;
+          shipping_fee: number;
+          status: string;
+          subtotal: number;
+          tax: number;
+          total: number;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'orders';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
     };
     Enums: {
       [_ in never]: never;
