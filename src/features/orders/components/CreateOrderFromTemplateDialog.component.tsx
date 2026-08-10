@@ -111,7 +111,7 @@ export function CreateOrderFromTemplateDialog({
             placeholder={PLACEHOLDER}
             value={text}
             onChange={(e) => setText(e.target.value)}
-            className="font-mono text-sm"
+            className="max-h-[60vh] overflow-y-scroll font-mono text-sm"
           />
           {errors.length > 0 && (
             <ul className="text-destructive list-inside list-disc text-sm">
