@@ -18,7 +18,7 @@ export const ORDER_FORM_ID = 'order-form';
 
 const orderFormSchema = z.object({
   customerName: z.string().min(1, 'Customer name is required'),
-  customerPhone: z.string(),
+  customerPhone: z.string().min(1, 'Customer phone is required'),
   customerEmail: z
     .string()
     .refine(
@@ -90,14 +90,22 @@ export function OrderForm({
   );
   const total = Math.max(0, subtotal - discount + shippingFee);
 
-  const submit = handleSubmit((values) => {
-    if (items.length === 0) {
-      setItemsError('Add at least one item.');
-      return;
-    }
-    setItemsError('');
-    onSubmit(values, items);
-  });
+  const submit = handleSubmit(
+    (values) => {
+      if (items.length === 0) {
+        setItemsError('Add at least one item.');
+        return;
+      }
+      setItemsError('');
+      onSubmit(values, items);
+    },
+    () => {
+      // Field errors already surface via `errors` — also flag the items
+      // section here so every invalid section shows on the same click,
+      // instead of only after the customer fields are fixed.
+      setItemsError(items.length === 0 ? 'Add at least one item.' : '');
+    },
+  );
 
   return (
     <form
@@ -112,7 +120,9 @@ export function OrderForm({
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5 sm:col-span-2">
-            <Label htmlFor="order-customer-name">Name</Label>
+            <Label htmlFor="order-customer-name">
+              Name <span className="text-destructive">*</span>
+            </Label>
             <Input
               id="order-customer-name"
               aria-invalid={!!errors.customerName}
@@ -125,8 +135,19 @@ export function OrderForm({
             )}
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="order-customer-phone">Phone</Label>
-            <Input id="order-customer-phone" {...register('customerPhone')} />
+            <Label htmlFor="order-customer-phone">
+              Phone <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="order-customer-phone"
+              aria-invalid={!!errors.customerPhone}
+              {...register('customerPhone')}
+            />
+            {errors.customerPhone && (
+              <p className="text-destructive text-sm">
+                {errors.customerPhone.message}
+              </p>
+            )}
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="order-customer-email">Email</Label>
@@ -179,7 +200,9 @@ export function OrderForm({
 
       <Card>
         <CardHeader>
-          <CardTitle>Items</CardTitle>
+          <CardTitle>
+            Items <span className="text-destructive">*</span>
+          </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <OrderItemsEditor
