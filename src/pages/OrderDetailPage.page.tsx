@@ -13,6 +13,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { InvoiceCard } from '@/features/invoices/components/InvoiceCard.component';
+import { useInvoice } from '@/features/invoices/hooks/useInvoices';
 import { DuplicateOrderButton } from '@/features/orders/components/DuplicateOrderButton.component';
 import { OrderStatusActions } from '@/features/orders/components/OrderStatusActions.component';
 import { OrderStatusHistoryCard } from '@/features/orders/components/OrderStatusHistoryCard.component';
@@ -30,6 +31,7 @@ export function OrderDetailPage() {
   const id = orderId ? Number(orderId) : -1;
   const navigate = useNavigate();
   const { data: order, isPending } = useOrder(id);
+  const { data: invoice } = useInvoice(id);
 
   if (isPending) {
     return (
@@ -125,11 +127,17 @@ export function OrderDetailPage() {
           <CardHeader>
             <CardTitle>Payment</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex flex-col gap-1.5">
             <PaymentStatusSelect
               orderId={order.id}
               paymentStatus={order.payment_status}
+              locked={!!invoice}
             />
+            {invoice && (
+              <p className="text-muted-foreground text-xs">
+                Locked — an invoice has already been issued for this order.
+              </p>
+            )}
           </CardContent>
         </Card>
 

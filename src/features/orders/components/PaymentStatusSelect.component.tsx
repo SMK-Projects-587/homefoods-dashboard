@@ -19,6 +19,10 @@ const UNSET = 'unset';
 interface PaymentStatusSelectProps {
   orderId: number;
   paymentStatus: string | null;
+  /** True once an invoice row exists for this order — invoicing requires
+   *  `paid`, and an issued invoice is permanent, so payment status must stay
+   *  locked at `paid` from then on rather than drift out from under it. */
+  locked?: boolean;
   className?: string;
 }
 
@@ -26,11 +30,12 @@ interface PaymentStatusSelectProps {
  * Payment tracking is deliberately independent of the status workflow in
  * `OrderStatusActions`: no transition rules, always editable regardless of
  * the order's status (including completed/cancelled — e.g. marking a
- * completed order refunded later).
+ * completed order refunded later) — unless `locked` (see prop doc).
  */
 export function PaymentStatusSelect({
   orderId,
   paymentStatus,
+  locked,
   className,
 }: PaymentStatusSelectProps) {
   const mutation = useUpdatePaymentStatus(orderId);
@@ -41,7 +46,7 @@ export function PaymentStatusSelect({
       onValueChange={(next) =>
         mutation.mutate(next === UNSET ? null : (next as PaymentStatus))
       }
-      disabled={mutation.isPending}
+      disabled={mutation.isPending || locked}
     >
       <SelectTrigger className={cn('w-full sm:w-40', className)}>
         <SelectValue />
