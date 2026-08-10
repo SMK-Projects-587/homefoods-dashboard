@@ -62,6 +62,14 @@ export function ProductDetailsForm({
             </div>
 
             <div className="flex flex-col gap-1.5">
+              <Label htmlFor="product-native-name">Native name</Label>
+              <Input id="product-native-name" {...register('native_name')} />
+              <p className="text-muted-foreground text-xs">
+                Optional Telugu display name shown in the storefront.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
               <Label htmlFor="product-category">Category</Label>
               <CategorySelect
                 value={watch('category_id')}

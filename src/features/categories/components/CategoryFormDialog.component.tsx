@@ -29,6 +29,7 @@ import type { Category } from '../types';
 
 const categorySchema = z.object({
   name: z.string().min(1, 'Name is required'),
+  nativeName: z.string(),
   description: z.string(),
   image: z.instanceof(File).nullable(),
 });
@@ -205,13 +206,14 @@ export function CategoryFormDialog({
     formState: { errors },
   } = useForm<CategoryValues>({
     resolver: zodResolver(categorySchema),
-    defaultValues: { name: '', description: '', image: null },
+    defaultValues: { name: '', nativeName: '', description: '', image: null },
   });
 
   useEffect(() => {
     if (open) {
       reset({
         name: category?.name ?? '',
+        nativeName: category?.native_name ?? '',
         description: category?.description ?? '',
         image: null,
       });
@@ -219,7 +221,8 @@ export function CategoryFormDialog({
   }, [open, category, reset]);
 
   // `image` is a create-only form field; strip it from the DB payload.
-  const onSubmit = ({ image, ...input }: CategoryValues) => {
+  const onSubmit = ({ image, nativeName, ...rest }: CategoryValues) => {
+    const input = { ...rest, native_name: nativeName || null };
     if (isEditing) {
       updateMutation.mutate(
         { id: category.id, input },
@@ -269,6 +272,15 @@ export function CategoryFormDialog({
             {errors.name && (
               <p className="text-destructive text-sm">{errors.name.message}</p>
             )}
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="category-native-name">Native name</Label>
+            <Input id="category-native-name" {...register('nativeName')} />
+            <p className="text-muted-foreground text-xs">
+              Optional Telugu display name shown beneath the English name in the
+              storefront.
+            </p>
           </div>
 
           <div className="flex flex-col gap-1.5">

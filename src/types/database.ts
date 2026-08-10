@@ -42,6 +42,7 @@ export type Database = {
           image_path: string;
           is_active: boolean;
           name: string;
+          native_name: string | null;
           slug: string;
           updated_at: string;
         };
@@ -52,6 +53,7 @@ export type Database = {
           image_path?: string;
           is_active?: boolean;
           name: string;
+          native_name?: string | null;
           slug: string;
           updated_at?: string;
         };
@@ -62,6 +64,7 @@ export type Database = {
           image_path?: string;
           is_active?: boolean;
           name?: string;
+          native_name?: string | null;
           slug?: string;
           updated_at?: string;
         };
@@ -416,6 +419,7 @@ export type Database = {
           meta_description: string;
           meta_title: string;
           name: string;
+          native_name: string | null;
           search_vector: unknown;
           slug: string;
           updated_at: string;
@@ -430,6 +434,7 @@ export type Database = {
           meta_description?: string;
           meta_title?: string;
           name: string;
+          native_name?: string | null;
           search_vector?: unknown;
           slug: string;
           updated_at?: string;
@@ -444,6 +449,7 @@ export type Database = {
           meta_description?: string;
           meta_title?: string;
           name?: string;
+          native_name?: string | null;
           search_vector?: unknown;
           slug?: string;
           updated_at?: string;

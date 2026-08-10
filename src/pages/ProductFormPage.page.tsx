@@ -19,6 +19,7 @@ import { type ProductDetailsValues } from '@/features/products/schemas';
 function toDetailsValues(
   product?: {
     name: string;
+    native_name: string | null;
     category_id: number | null;
     description: string;
     keywords: string[];
@@ -27,6 +28,7 @@ function toDetailsValues(
 ): ProductDetailsValues {
   return {
     name: product?.name ?? '',
+    native_name: product?.native_name ?? '',
     category_id: product?.category_id ? String(product.category_id) : '',
     description: product?.description ?? '',
     keywords: product?.keywords?.join(', ') ?? '',
@@ -37,6 +39,7 @@ function toDetailsValues(
 function toProductInput(values: ProductDetailsValues) {
   return {
     name: values.name,
+    native_name: values.native_name || null,
     category_id: values.category_id ? Number(values.category_id) : null,
     description: values.description,
     keywords: values.keywords
