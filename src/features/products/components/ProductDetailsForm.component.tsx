@@ -1,3 +1,4 @@
+import { forwardRef, useEffect, useImperativeHandle } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -7,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
 
 import { CategorySelect } from './CategorySelect.component';
 
@@ -14,25 +16,43 @@ import { productDetailsSchema, type ProductDetailsValues } from '../schemas';
 
 export const PRODUCT_DETAILS_FORM_ID = 'product-details-form';
 
+export interface ProductDetailsFormHandle {
+  /** Resets the dirty flag to the form's current values, e.g. after a successful save. */
+  markSaved: () => void;
+}
+
 interface ProductDetailsFormProps {
   defaultValues: ProductDetailsValues;
   onSubmit: (values: ProductDetailsValues) => void;
+  onDirtyChange?: (isDirty: boolean) => void;
 }
 
-export function ProductDetailsForm({
-  defaultValues,
-  onSubmit,
-}: ProductDetailsFormProps) {
+export const ProductDetailsForm = forwardRef<
+  ProductDetailsFormHandle,
+  ProductDetailsFormProps
+>(function ProductDetailsForm({ defaultValues, onSubmit, onDirtyChange }, ref) {
   const {
     register,
     handleSubmit,
     watch,
     setValue,
-    formState: { errors },
+    getValues,
+    reset,
+    formState: { errors, isDirty },
   } = useForm<ProductDetailsValues>({
     resolver: zodResolver(productDetailsSchema),
     defaultValues,
   });
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+
+  useImperativeHandle(ref, () => ({
+    markSaved: () => reset(getValues()),
+  }));
+
+  const isActive = watch('is_active');
 
   return (
     <Card>
@@ -99,16 +119,35 @@ export function ProductDetailsForm({
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <Switch
               id="product-active"
-              checked={watch('is_active')}
+              checked={isActive}
               onCheckedChange={(checked) => setValue('is_active', checked)}
             />
-            <Label htmlFor="product-active">Active (visible in catalog)</Label>
+            <Label htmlFor="product-active">Active</Label>
+            <span className="flex items-center gap-1.5 text-sm">
+              <span
+                className={cn(
+                  'size-2 rounded-full',
+                  isActive
+                    ? 'bg-green-600 dark:bg-green-400'
+                    : 'bg-muted-foreground',
+                )}
+              />
+              <span
+                className={cn(
+                  isActive
+                    ? 'text-green-700 dark:text-green-400'
+                    : 'text-muted-foreground',
+                )}
+              >
+                {isActive ? 'Visible in catalog' : 'Hidden from catalog'}
+              </span>
+            </span>
           </div>
         </form>
       </CardContent>
     </Card>
   );
-}
+});

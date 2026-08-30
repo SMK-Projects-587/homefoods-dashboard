@@ -1,5 +1,7 @@
+import { useRef, useState } from 'react';
+
 import { ArrowLeft, Loader2 } from 'lucide-react';
-import { useNavigate, useParams } from '@tanstack/react-router';
+import { useBlocker, useNavigate, useParams } from '@tanstack/react-router';
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -7,6 +9,7 @@ import { ImagesSection } from '@/features/products/components/ImagesSection.comp
 import {
   PRODUCT_DETAILS_FORM_ID,
   ProductDetailsForm,
+  type ProductDetailsFormHandle,
 } from '@/features/products/components/ProductDetailsForm.component';
 import { VariantsSection } from '@/features/products/components/VariantsSection.component';
 import {
@@ -63,6 +66,16 @@ export function ProductFormPage() {
   const updateMutation = useUpdateProduct(productId ?? -1);
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
+  const formRef = useRef<ProductDetailsFormHandle>(null);
+  const [isDirty, setIsDirty] = useState(false);
+
+  useBlocker({
+    shouldBlockFn: () =>
+      isDirty &&
+      !window.confirm('You have unsaved changes. Leave without saving?'),
+    enableBeforeUnload: isDirty,
+  });
+
   if (isEditing && isLoadingProduct) {
     return (
       <div className="flex flex-col gap-4">
@@ -103,17 +116,22 @@ export function ProductFormPage() {
       </div>
 
       <ProductDetailsForm
+        ref={formRef}
         defaultValues={toDetailsValues(product)}
+        onDirtyChange={setIsDirty}
         onSubmit={(values) => {
           const input = toProductInput(values);
           if (isEditing && productId !== undefined) {
-            updateMutation.mutate(input);
+            updateMutation.mutate(input, {
+              onSuccess: () => formRef.current?.markSaved(),
+            });
           } else {
             // slug is left blank on purpose — a DB trigger slugifies the name.
             createMutation.mutate(
               { ...input, slug: '' },
               {
                 onSuccess: (created) => {
+                  formRef.current?.markSaved();
                   navigate({
                     to: '/products/$productId',
                     params: { productId: String(created.id) },

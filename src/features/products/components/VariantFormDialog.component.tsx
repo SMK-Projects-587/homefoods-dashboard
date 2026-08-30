@@ -25,7 +25,7 @@ import {
 import type { ProductVariant } from '../types';
 
 const variantSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
+  title: z.string().trim().min(1, 'Title is required'),
   price: z
     .string()
     .min(1, 'Price is required')
@@ -40,7 +40,9 @@ const variantSchema = z.object({
   inStock: z.boolean(),
   isDefault: z.boolean(),
   isActive: z.boolean(),
-  attributes: z.array(z.object({ key: z.string(), value: z.string() })),
+  attributes: z.array(
+    z.object({ key: z.string().trim(), value: z.string().trim() }),
+  ),
 });
 
 type VariantValues = z.infer<typeof variantSchema>;
@@ -110,9 +112,7 @@ export function VariantFormDialog({
 
   const onSubmit = (values: VariantValues) => {
     const attributes = Object.fromEntries(
-      values.attributes
-        .filter((a) => a.key.trim())
-        .map((a) => [a.key.trim(), a.value]),
+      values.attributes.filter((a) => a.key).map((a) => [a.key, a.value]),
     );
     const input = {
       product_id: productId,

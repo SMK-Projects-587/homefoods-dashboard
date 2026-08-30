@@ -28,9 +28,9 @@ import {
 import type { Category } from '../types';
 
 const categorySchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  nativeName: z.string(),
-  description: z.string(),
+  name: z.string().trim().min(1, 'Name is required'),
+  nativeName: z.string().trim(),
+  description: z.string().trim(),
   image: z.instanceof(File).nullable(),
 });
 
