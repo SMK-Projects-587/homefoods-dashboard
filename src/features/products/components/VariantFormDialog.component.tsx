@@ -24,26 +24,39 @@ import {
 } from '../hooks/useProductVariants';
 import type { ProductVariant } from '../types';
 
-const variantSchema = z.object({
-  title: z.string().trim().min(1, 'Title is required'),
-  price: z
-    .string()
-    .min(1, 'Price is required')
-    .refine((v) => Number(v) >= 0, 'Price must be 0 or more'),
-  compareAtPrice: z.string(),
-  stock: z
-    .string()
-    .refine(
-      (v) => v === '' || Number.isInteger(Number(v)),
-      'Stock must be a whole number',
-    ),
-  inStock: z.boolean(),
-  isDefault: z.boolean(),
-  isActive: z.boolean(),
-  attributes: z.array(
-    z.object({ key: z.string().trim(), value: z.string().trim() }),
-  ),
-});
+const variantSchema = z
+  .object({
+    title: z.string().trim().min(1, 'Title is required'),
+    price: z
+      .string()
+      .min(1, 'Price is required')
+      .refine((v) => Number(v) >= 0, 'Price must be 0 or more'),
+    compareAtPrice: z.string(),
+    stock: z
+      .string()
+      .refine(
+        (v) => v === '' || Number.isInteger(Number(v)),
+        'Stock must be a whole number',
+      ),
+    inStock: z.boolean(),
+    isDefault: z.boolean(),
+    isActive: z.boolean(),
+    attributes: z
+      .array(z.object({ key: z.string().trim(), value: z.string().trim() }))
+      .refine(
+        (attrs) => attrs.some((a) => a.key && a.value),
+        'Add at least one attribute (e.g. weight: 500 g)',
+      ),
+  })
+  .refine(
+    (data) =>
+      data.compareAtPrice === '' ||
+      Number(data.compareAtPrice) > Number(data.price),
+    {
+      message: 'Compare-at price must be greater than the price',
+      path: ['compareAtPrice'],
+    },
+  );
 
 type VariantValues = z.infer<typeof variantSchema>;
 
@@ -150,8 +163,9 @@ export function VariantFormDialog({
             {isEditing ? 'Edit variant' : 'New variant'}
           </DialogTitle>
           <DialogDescription>
-            The SKU is generated automatically. Attributes are free-form (e.g.
-            weight, color).
+            Title is the label shown to customers for this variant (e.g.
+            &quot;500 g&quot; or &quot;Large / Red&quot;). Attributes are the
+            structured details behind it (e.g. weight: 500 g).
           </DialogDescription>
         </DialogHeader>
 
@@ -161,7 +175,9 @@ export function VariantFormDialog({
           noValidate
         >
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="variant-title">Title</Label>
+            <Label htmlFor="variant-title">
+              Title <span className="text-destructive">*</span>
+            </Label>
             <Input
               id="variant-title"
               placeholder="500 g"
@@ -175,7 +191,9 @@ export function VariantFormDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="variant-price">Price (₹)</Label>
+              <Label htmlFor="variant-price">
+                Price (₹) <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="variant-price"
                 type="number"
@@ -194,8 +212,14 @@ export function VariantFormDialog({
                 id="variant-compare"
                 type="number"
                 step="0.01"
+                aria-invalid={!!errors.compareAtPrice}
                 {...register('compareAtPrice')}
               />
+              {errors.compareAtPrice && (
+                <p className="text-destructive text-sm">
+                  {errors.compareAtPrice.message}
+                </p>
+              )}
             </div>
           </div>
 
@@ -205,7 +229,9 @@ export function VariantFormDialog({
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label>Attributes</Label>
+            <Label>
+              Attributes <span className="text-destructive">*</span>
+            </Label>
             {fields.map((field, index) => (
               <div key={field.id} className="flex items-center gap-2">
                 <Input
@@ -237,6 +263,11 @@ export function VariantFormDialog({
               <Plus className="size-4" />
               Add attribute
             </Button>
+            {errors.attributes && (
+              <p className="text-destructive text-sm">
+                {errors.attributes.message}
+              </p>
+            )}
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:gap-6">

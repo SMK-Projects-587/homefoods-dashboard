@@ -63,7 +63,9 @@ export function CancelOrderDialog({
         </AlertDialogHeader>
 
         <div className="flex flex-col gap-1.5 text-left">
-          <Label htmlFor="cancel-order-reason">Reason</Label>
+          <Label htmlFor="cancel-order-reason">
+            Reason <span className="text-destructive">*</span>
+          </Label>
           <Textarea
             id="cancel-order-reason"
             rows={3}

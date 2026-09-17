@@ -263,7 +263,9 @@ export function CategoryFormDialog({
           )}
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="category-name">Name</Label>
+            <Label htmlFor="category-name">
+              Name <span className="text-destructive">*</span>
+            </Label>
             <Input
               id="category-name"
               aria-invalid={!!errors.name}
