@@ -15,11 +15,68 @@ import {
   type OrderDetail,
   type OrderInsert,
   type OrderItemInsert,
+  type OrderStats,
   type OrderStatus,
   type OrderStatusHistory,
   type OrderUpdate,
   type PaymentStatus,
 } from './types';
+
+interface DashboardOrderStatsRow {
+  lifetime_order_count: number;
+  lifetime_completed_count: number;
+  lifetime_revenue: number;
+  this_month_order_count: number;
+  this_month_completed_count: number;
+  this_month_revenue: number;
+  last_month_order_count: number;
+  last_month_completed_count: number;
+  last_month_revenue: number;
+}
+
+/**
+ * `dashboard_order_stats` is a standalone migration (not yet typegen'd
+ * against `src/types/database.ts`), so the generated `rpc()` overload
+ * doesn't know this function name yet — retype `supabase` itself (not the
+ * extracted method) so the call below stays a normal bound method call.
+ * Once types are regenerated this cast can be dropped.
+ */
+type SupabaseWithDashboardStats = typeof supabase & {
+  rpc: (fn: 'dashboard_order_stats') => {
+    single: () => Promise<{ data: unknown; error: Error | null }>;
+  };
+};
+
+/**
+ * Order counts + completed-order revenue for lifetime/this-month/last-month,
+ * via the `dashboard_order_stats()` Postgres function — one round trip, one
+ * single-pass aggregate query server-side, instead of fetching order rows
+ * client-side. See the migration for the exact definitions.
+ */
+export async function getOrderStats(): Promise<OrderStats> {
+  const client = supabase as SupabaseWithDashboardStats;
+  const { data, error } = await client.rpc('dashboard_order_stats').single();
+  if (error) throw error;
+  const row = data as unknown as DashboardOrderStatsRow;
+
+  return {
+    lifetime: {
+      orderCount: row.lifetime_order_count,
+      completedCount: row.lifetime_completed_count,
+      revenue: Number(row.lifetime_revenue),
+    },
+    thisMonth: {
+      orderCount: row.this_month_order_count,
+      completedCount: row.this_month_completed_count,
+      revenue: Number(row.this_month_revenue),
+    },
+    lastMonth: {
+      orderCount: row.last_month_order_count,
+      completedCount: row.last_month_completed_count,
+      revenue: Number(row.last_month_revenue),
+    },
+  };
+}
 
 export interface ListOrdersParams extends ListParams {
   status?: OrderStatus;

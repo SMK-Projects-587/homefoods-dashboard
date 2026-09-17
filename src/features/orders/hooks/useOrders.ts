@@ -9,6 +9,7 @@ import {
 import {
   createOrder,
   getOrder,
+  getOrderStats,
   getOrderStatusHistory,
   listOrders,
   type ListOrdersParams,
@@ -37,6 +38,17 @@ export function useOrdersTable(params: ListOrdersParams) {
     queryKey: ordersTableKey(params),
     queryFn: () => listOrders(params),
     placeholderData: keepPreviousData,
+  });
+}
+
+export const orderStatsKey = ['orders', 'stats'] as const;
+
+/** Dashboard summary — one lightweight RPC, no client-side aggregation. */
+export function useOrderStats() {
+  return useQuery({
+    queryKey: orderStatsKey,
+    queryFn: getOrderStats,
+    staleTime: 60_000,
   });
 }
 

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { OrderStatsCards } from '@/features/orders';
 import { supabase } from '@/lib/supabase';
 
 async function fetchCounts() {
@@ -69,6 +70,15 @@ export function DashboardPage() {
           </Link>
         ))}
       </div>
+
+      <div>
+        <h2 className="text-foreground text-lg font-semibold">Sales</h2>
+        <p className="text-muted-foreground text-sm">
+          Orders and revenue by period. Sales and average order value count
+          completed orders only.
+        </p>
+      </div>
+      <OrderStatsCards />
     </div>
   );
 }

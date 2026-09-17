@@ -57,6 +57,22 @@ export function isOrderEditable(status: string): boolean {
   return status === 'pending';
 }
 
+/** One period's slice of `dashboard_order_stats()` — see orders/api.ts. */
+export interface OrderStatsPeriod {
+  /** Non-cancelled orders (pending + confirmed + completed). */
+  orderCount: number;
+  /** Completed orders only — the count `revenue` is derived from. */
+  completedCount: number;
+  /** Sum of `total` for completed orders only (realized revenue). */
+  revenue: number;
+}
+
+export interface OrderStats {
+  lifetime: OrderStatsPeriod;
+  thisMonth: OrderStatsPeriod;
+  lastMonth: OrderStatsPeriod;
+}
+
 export const PAYMENT_STATUSES = ['unpaid', 'paid', 'refunded'] as const;
 
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
