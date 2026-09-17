@@ -208,7 +208,17 @@ export function OrderForm({
           <OrderItemsEditor
             items={items}
             onAdd={(item) => {
-              setItems((prev) => [...prev, item]);
+              setItems((prev) => {
+                const existingIndex = prev.findIndex(
+                  (i) => i.variantId !== null && i.variantId === item.variantId,
+                );
+                if (existingIndex === -1) return [...prev, item];
+                return prev.map((i, idx) =>
+                  idx === existingIndex
+                    ? { ...i, quantity: i.quantity + item.quantity }
+                    : i,
+                );
+              });
               setItemsError('');
             }}
             onRemove={(index) =>
