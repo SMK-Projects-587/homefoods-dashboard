@@ -29,14 +29,38 @@ function parseBlockFields(lines: string[]): BlockFields {
   return fields;
 }
 
+// The item list is wrapped in a line of 4+ dashes (WhatsApp messages tend to
+// use "-----"); individual items within it are separated by exactly "---".
+// Anything outside the wrapper (greeting, totals, "My details" footer, etc.)
+// is free-form and deliberately ignored.
+const SECTION_DELIMITER = /^-{4,}$/;
+
 export function parseOrderTemplate(text: string): ParseOrderTemplateResult {
   if (text.trim() === '') {
     return { items: [], errors: ['Paste an order message first.'] };
   }
 
   const lines = text.split('\n');
+  const delimiterIndexes = lines
+    .map((line, index) => (SECTION_DELIMITER.test(line.trim()) ? index : -1))
+    .filter((index) => index !== -1);
+
+  if (delimiterIndexes.length < 2) {
+    return {
+      items: [],
+      errors: [
+        'Invalid data: could not find the item list. Wrap it between two lines of dashes (-----), as in the pasted WhatsApp message.',
+      ],
+    };
+  }
+
+  const sectionLines = lines.slice(
+    delimiterIndexes[0] + 1,
+    delimiterIndexes[delimiterIndexes.length - 1],
+  );
+
   const chunks: string[][] = [[]];
-  for (const line of lines) {
+  for (const line of sectionLines) {
     if (line.trim() === '---') {
       chunks.push([]);
     } else {

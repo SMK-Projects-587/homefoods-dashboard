@@ -20,14 +20,15 @@ import type { OrderItemDraft } from './OrderItemsEditor.component';
 import { useOrderDraftStore } from '../store';
 import { parseOrderTemplate } from '../templateParser';
 
-const PLACEHOLDER = `Name: Avakaya
+const PLACEHOLDER = `-----
+Name: Avakaya
 Qty: 2
 Variant: HF-00004
 ---
 Name: Ariselu
 Qty: 3
 Variant: HF-00009
----`;
+-----`;
 
 interface CreateOrderFromTemplateDialogProps {
   open: boolean;
@@ -100,8 +101,8 @@ export function CreateOrderFromTemplateDialog({
         <DialogHeader>
           <DialogTitle>Create order from template</DialogTitle>
           <DialogDescription>
-            Paste a WhatsApp-style order message. Only the Variant/SKU and Qty
-            of each item are used — you'll fill in the rest on the next screen.
+            Paste a WhatsApp-style order message. Only the item list wrapped in
+            dashes (-----) is used.
           </DialogDescription>
         </DialogHeader>
 
