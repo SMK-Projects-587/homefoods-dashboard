@@ -4,14 +4,14 @@ import { ArrowDown, ArrowUp, X } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 
-import { ProductCombobox } from './ProductCombobox.component';
+import { MultiProductCombobox } from './MultiProductCombobox.component';
 
 import { useBestsellers, useSaveBestsellers } from '../hooks/useBestsellers';
 
 /** The storefront homepage only ever shows this many — see getBestsellers()
- *  in the storefront repo. Kept in sync manually (cross-repo). */
+ *  in the storefront repo. Kept in sync manually (cross-repo), and enforced
+ *  here as a hard cap (the picker disables further selection once reached). */
 export const STOREFRONT_BESTSELLER_LIMIT = 12;
 
 interface DraftItem {
@@ -98,10 +98,17 @@ export const BestsellersManager = forwardRef<
     setDraft((prev) => prev?.filter((p) => p.id !== id) ?? prev);
   };
 
-  const add = (product: { id: number; name: string; is_active: boolean }) => {
+  const toggle = (product: {
+    id: number;
+    name: string;
+    is_active: boolean;
+  }) => {
     setDraft((prev) => {
       const base = prev ?? [];
-      if (base.some((p) => p.id === product.id)) return base;
+      if (base.some((p) => p.id === product.id)) {
+        return base.filter((p) => p.id !== product.id);
+      }
+      if (base.length >= STOREFRONT_BESTSELLER_LIMIT) return base;
       return [...base, product];
     });
   };
@@ -110,73 +117,63 @@ export const BestsellersManager = forwardRef<
 
   return (
     <div className="flex flex-col gap-4">
-      <ProductCombobox value={null} onChange={add} excludeIds={draftIds} />
+      <MultiProductCombobox
+        selectedIds={draftIds}
+        onToggle={toggle}
+        maxSelected={STOREFRONT_BESTSELLER_LIMIT}
+      />
 
       {isPending && draft === null ? (
         <p className="text-muted-foreground text-sm">Loading…</p>
       ) : list.length === 0 ? (
         <p className="text-muted-foreground text-sm">
-          No bestsellers selected yet — search above to add one.
+          No bestsellers selected yet — search above to add some.
         </p>
       ) : (
         <div className="flex flex-col gap-1.5">
-          {list.map((product, index) => {
-            const overLimit = index >= STOREFRONT_BESTSELLER_LIMIT;
-            return (
-              <div
-                key={product.id}
-                className={cn(
-                  'border-border flex items-center gap-2 rounded-md border p-2',
-                  overLimit && 'opacity-60',
-                )}
+          {list.map((product, index) => (
+            <div
+              key={product.id}
+              className="border-border flex items-center gap-2 rounded-md border p-2"
+            >
+              <span className="text-muted-foreground w-6 text-right text-sm tabular-nums">
+                {index + 1}
+              </span>
+              <p className="text-foreground flex-1 text-sm font-medium">
+                {product.name}
+              </p>
+              {!product.is_active && (
+                <Badge variant="secondary">Inactive</Badge>
+              )}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                disabled={index === 0}
+                onClick={() => move(index, -1)}
               >
-                <span className="text-muted-foreground w-6 text-right text-sm tabular-nums">
-                  {index + 1}
-                </span>
-                <div className="flex-1">
-                  <p className="text-foreground text-sm font-medium">
-                    {product.name}
-                  </p>
-                  {overLimit && (
-                    <p className="text-muted-foreground text-xs">
-                      Won&apos;t appear on the storefront — only the top{' '}
-                      {STOREFRONT_BESTSELLER_LIMIT} show.
-                    </p>
-                  )}
-                </div>
-                {!product.is_active && (
-                  <Badge variant="secondary">Inactive</Badge>
-                )}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  disabled={index === 0}
-                  onClick={() => move(index, -1)}
-                >
-                  <ArrowUp className="size-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  disabled={index === list.length - 1}
-                  onClick={() => move(index, 1)}
-                >
-                  <ArrowDown className="size-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="text-destructive"
-                  onClick={() => remove(product.id)}
-                >
-                  <X className="size-4" />
-                </Button>
-              </div>
-            );
-          })}
+                <ArrowUp className="size-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                disabled={index === list.length - 1}
+                onClick={() => move(index, 1)}
+              >
+                <ArrowDown className="size-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="text-destructive"
+                onClick={() => remove(product.id)}
+              >
+                <X className="size-4" />
+              </Button>
+            </div>
+          ))}
         </div>
       )}
     </div>

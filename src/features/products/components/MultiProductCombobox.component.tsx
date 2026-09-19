@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 
-import { Check, ChevronsUpDown, Loader2 } from 'lucide-react';
+import { ChevronsUpDown, Loader2 } from 'lucide-react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 
-import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import {
   Popover,
@@ -16,19 +16,33 @@ import { cn } from '@/lib/utils';
 import { useInfiniteProducts } from '../hooks/useProducts';
 import type { ProductListItem } from '../types';
 
-interface ProductComboboxProps {
-  value: ProductListItem | null;
-  onChange: (product: ProductListItem) => void;
+interface MultiProductComboboxProps {
+  selectedIds: number[];
+  /** Fires on every toggle — both selecting and deselecting a row. The
+   *  caller decides what "selected" means (add vs. remove) by checking
+   *  whether the id was already in `selectedIds`. */
+  onToggle: (product: ProductListItem) => void;
+  /** Rows not already selected are disabled once `selectedIds.length`
+   *  reaches this — already-selected rows stay clickable so they can
+   *  still be deselected at the cap. */
+  maxSelected: number;
   className?: string;
 }
 
-const ROW_HEIGHT = 40;
+const ROW_HEIGHT = 44;
 
-export function ProductCombobox({
-  value,
-  onChange,
+/**
+ * Search-as-you-type, stays open across multiple picks — unlike
+ * `ProductCombobox` (single pick, closes immediately), this is for
+ * building up a bounded set (e.g. curating bestsellers).
+ */
+export function MultiProductCombobox({
+  selectedIds,
+  onToggle,
+  maxSelected,
   className,
-}: ProductComboboxProps) {
+}: MultiProductComboboxProps) {
+  const listId = useId();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebouncedValue(search, 300);
@@ -46,6 +60,8 @@ export function ProductCombobox({
     () => data?.pages.flatMap((page) => page.rows) ?? [],
     [data],
   );
+
+  const atLimit = selectedIds.length >= maxSelected;
 
   // State-backed ref: the scroll element lives inside the portaled popover and
   // only mounts on open, so a plain useRef wouldn't re-render the virtualizer
@@ -88,22 +104,24 @@ export function ProductCombobox({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
+        <button
           type="button"
-          variant="outline"
           role="combobox"
           aria-expanded={open}
+          aria-controls={listId}
           className={cn(
-            'w-full justify-between font-normal',
-            !value && 'text-muted-foreground',
+            'border-input focus-visible:border-ring focus-visible:ring-ring/50 flex h-9 w-full items-center justify-between gap-2 rounded-lg border bg-transparent px-3 text-sm transition-colors outline-none focus-visible:ring-3',
+            selectedIds.length === 0 && 'text-muted-foreground',
             className,
           )}
         >
           <span className="truncate">
-            {value ? value.name : 'Select product'}
+            {selectedIds.length === 0
+              ? 'Search products to add…'
+              : `${selectedIds.length} of ${maxSelected} products selected`}
           </span>
-          <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
-        </Button>
+          <ChevronsUpDown className="text-muted-foreground size-4 shrink-0" />
+        </button>
       </PopoverTrigger>
 
       <PopoverContent
@@ -127,7 +145,14 @@ export function ProductCombobox({
           )}
         </div>
 
+        {atLimit && (
+          <p className="text-muted-foreground border-border border-b px-3 py-1.5 text-xs">
+            Maximum {maxSelected} reached — remove one to add another.
+          </p>
+        )}
+
         <div
+          id={listId}
           ref={setScrollEl}
           className="max-h-64 overflow-y-auto overscroll-contain"
         >
@@ -147,6 +172,8 @@ export function ProductCombobox({
               {virtualItems.map((virtualRow) => {
                 const isSentinel = virtualRow.index >= products.length;
                 const product = products[virtualRow.index];
+                const isSelected = product && selectedIds.includes(product.id);
+                const disabled = !isSelected && atLimit;
                 return (
                   <div
                     key={virtualRow.key}
@@ -164,19 +191,20 @@ export function ProductCombobox({
                     ) : (
                       <button
                         type="button"
-                        onClick={() => {
-                          onChange(product);
-                          setOpen(false);
-                        }}
+                        disabled={disabled}
+                        onClick={() => onToggle(product)}
                         className={cn(
-                          'hover:bg-accent hover:text-accent-foreground flex h-full w-full items-center justify-between gap-2 px-3 text-left text-sm',
-                          value?.id === product.id && 'bg-accent/50',
+                          'hover:bg-accent hover:text-accent-foreground flex h-full w-full items-center gap-3 px-3 text-left text-sm disabled:pointer-events-none disabled:opacity-40',
+                          isSelected && 'bg-accent/50',
                         )}
                       >
+                        <Checkbox
+                          checked={isSelected}
+                          disabled={disabled}
+                          tabIndex={-1}
+                          className="pointer-events-none"
+                        />
                         <span className="truncate">{product.name}</span>
-                        {value?.id === product.id && (
-                          <Check className="size-4 shrink-0" />
-                        )}
                       </button>
                     )}
                   </div>

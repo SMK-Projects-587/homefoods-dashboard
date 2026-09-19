@@ -28,11 +28,11 @@ export function BestsellersPage() {
         <div>
           <h1 className="text-foreground text-xl font-semibold">Bestsellers</h1>
           <p className="text-muted-foreground text-sm">
-            Products featured in the storefront&apos;s Bestsellers section, in
-            this order — only the top {STOREFRONT_BESTSELLER_LIMIT} are shown
-            there. If none are selected, the storefront falls back to its
-            regular catalog order (first {STOREFRONT_BESTSELLER_LIMIT} products
-            alphabetically). Changes aren&apos;t applied until you save.
+            Choose up to {STOREFRONT_BESTSELLER_LIMIT} products to feature in
+            the storefront&apos;s Bestsellers section, in this order. If none
+            are selected, the storefront falls back to its regular catalog order
+            (first {STOREFRONT_BESTSELLER_LIMIT} products alphabetically).
+            Changes aren&apos;t applied until you save.
           </p>
         </div>
         <Button
