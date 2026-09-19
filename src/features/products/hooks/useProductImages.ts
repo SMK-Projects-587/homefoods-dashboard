@@ -14,10 +14,24 @@ import {
 export function useUploadProductImage(productId: number, slug: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (file: File) => {
+    mutationFn: async ({
+      file,
+      isPrimary,
+    }: {
+      file: File;
+      /** Pass `true` only when the product has no images yet — the caller
+       *  (which already holds the current image list) decides this, not
+       *  the hook. Later uploads should NOT silently swap the storefront's
+       *  primary image; that stays an explicit "Set primary" action. */
+      isPrimary: boolean;
+    }) => {
       const key = buildImageKey('products', slug, file);
       await uploadImage(key, file);
-      return createProductImage({ product_id: productId, image_path: key });
+      return createProductImage({
+        product_id: productId,
+        image_path: key,
+        is_primary: isPrimary,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: productKey(productId) });

@@ -59,7 +59,9 @@ export function ImagesSection({ productId, slug, images }: ImagesSectionProps) {
           className="hidden"
           onChange={(e) => {
             const file = e.target.files?.[0];
-            if (file) uploadMutation.mutate(file);
+            if (file) {
+              uploadMutation.mutate({ file, isPrimary: images.length === 0 });
+            }
             e.target.value = '';
           }}
         />
