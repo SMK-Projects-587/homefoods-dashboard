@@ -81,7 +81,6 @@ export function CreateOrderFromTemplateDialog({
               sku: variant.sku,
               unitPrice: Number(variant.price),
               quantity,
-              attributes: (variant.attributes as Record<string, unknown>) ?? {},
             };
           },
         );

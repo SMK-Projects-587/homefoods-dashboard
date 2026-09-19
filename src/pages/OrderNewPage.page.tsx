@@ -12,7 +12,6 @@ import {
 import { type OrderItemDraft } from '@/features/orders/components/OrderItemsEditor.component';
 import { useCreateOrder } from '@/features/orders/hooks/useOrders';
 import { useOrderDraftStore } from '@/features/orders/store';
-import type { Json } from '@/types/database';
 
 export function OrderNewPage() {
   const navigate = useNavigate();
@@ -74,7 +73,6 @@ export function OrderNewPage() {
           product_name: item.productName,
           variant_title: item.variantTitle,
           sku: item.sku,
-          attributes: item.attributes as Json,
           unit_price: item.unitPrice,
           quantity: item.quantity,
           line_total: item.unitPrice * item.quantity,

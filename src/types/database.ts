@@ -155,7 +155,6 @@ export type Database = {
       };
       order_items: {
         Row: {
-          attributes: Json;
           created_at: string;
           id: number;
           line_total: number;
@@ -169,7 +168,6 @@ export type Database = {
           variant_title: string;
         };
         Insert: {
-          attributes?: Json;
           created_at?: string;
           id?: never;
           line_total: number;
@@ -183,7 +181,6 @@ export type Database = {
           variant_title: string;
         };
         Update: {
-          attributes?: Json;
           created_at?: string;
           id?: never;
           line_total?: number;
@@ -354,7 +351,6 @@ export type Database = {
       };
       product_variants: {
         Row: {
-          attributes: Json;
           compare_at_price: number | null;
           created_at: string;
           id: number;
@@ -369,7 +365,6 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
-          attributes?: Json;
           compare_at_price?: number | null;
           created_at?: string;
           id?: never;
@@ -384,7 +379,6 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
-          attributes?: Json;
           compare_at_price?: number | null;
           created_at?: string;
           id?: never;

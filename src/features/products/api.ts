@@ -27,7 +27,7 @@ export interface ListProductsParams extends ListParams {
 }
 
 const PRODUCT_LIST_SELECT =
-  '*, categories(id, name), product_variants(id, title, sku, price, is_default, is_active, in_stock, attributes)';
+  '*, categories(id, name), product_variants(id, title, sku, price, is_default, is_active, in_stock)';
 const PRODUCT_SORT_COLUMNS = ['name', 'is_active'] as const;
 
 /** Server-side filtered/sorted/paginated list — for the products table and picker. */
@@ -72,7 +72,7 @@ export async function getVariantsBySkus(
   if (skus.length === 0) return [];
   const { data, error } = await supabase
     .from('product_variants')
-    .select('id, sku, title, price, attributes, products(id, name)')
+    .select('id, sku, title, price, products(id, name)')
     .in('sku', skus);
   if (error) throw error;
   return data as VariantBySku[];
@@ -102,6 +102,17 @@ export async function updateProduct(
   return data;
 }
 
+/** `product_variants_product_title_key` — one title per product (23505 on violation). */
+function friendlyVariantError(error: {
+  code?: string;
+  message: string;
+}): Error {
+  if (error.code === '23505') {
+    return new Error('This product already has a variant with that title.');
+  }
+  return new Error(error.message);
+}
+
 export async function createVariant(
   input: ProductVariantInsert,
 ): Promise<ProductVariant> {
@@ -110,7 +121,7 @@ export async function createVariant(
     .insert(input)
     .select()
     .single();
-  if (error) throw error;
+  if (error) throw friendlyVariantError(error);
   return data;
 }
 
@@ -124,16 +135,8 @@ export async function updateVariant(
     .eq('id', id)
     .select()
     .single();
-  if (error) throw error;
+  if (error) throw friendlyVariantError(error);
   return data;
-}
-
-export async function deleteVariant(id: number): Promise<void> {
-  const { error } = await supabase
-    .from('product_variants')
-    .delete()
-    .eq('id', id);
-  if (error) throw error;
 }
 
 export async function createProductImage(

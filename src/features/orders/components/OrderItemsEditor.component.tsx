@@ -31,7 +31,6 @@ export interface OrderItemDraft {
   sku: string;
   unitPrice: number;
   quantity: number;
-  attributes: Record<string, unknown>;
 }
 
 interface OrderItemsEditorProps {
@@ -65,7 +64,6 @@ export function OrderItemsEditor({
       sku: selectedVariant.sku,
       unitPrice: Number(selectedVariant.price),
       quantity: qty,
-      attributes: (selectedVariant.attributes as Record<string, unknown>) ?? {},
     });
     setSelectedProduct(null);
     setVariantId('');

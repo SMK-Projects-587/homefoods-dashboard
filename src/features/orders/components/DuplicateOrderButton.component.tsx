@@ -58,7 +58,6 @@ export function DuplicateOrderButton({
             sku: variant.sku,
             unitPrice: Number(variant.price),
             quantity: item.quantity,
-            attributes: (variant.attributes as Record<string, unknown>) ?? {},
           };
         });
 

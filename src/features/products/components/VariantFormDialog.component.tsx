@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
-import { useFieldArray, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 
-import { Loader2, Plus, Trash2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -41,12 +41,6 @@ const variantSchema = z
     inStock: z.boolean(),
     isDefault: z.boolean(),
     isActive: z.boolean(),
-    attributes: z
-      .array(z.object({ key: z.string().trim(), value: z.string().trim() }))
-      .refine(
-        (attrs) => attrs.some((a) => a.key && a.value),
-        'Add at least one attribute (e.g. weight: 500 g)',
-      ),
   })
   .refine(
     (data) =>
@@ -68,15 +62,6 @@ interface VariantFormDialogProps {
 }
 
 function toDefaultValues(variant?: ProductVariant | null): VariantValues {
-  const attributes =
-    variant?.attributes && typeof variant.attributes === 'object'
-      ? Object.entries(variant.attributes as Record<string, unknown>).map(
-          ([key, value]) => ({
-            key,
-            value: String(value),
-          }),
-        )
-      : [];
   return {
     title: variant?.title ?? '',
     price: variant ? String(variant.price) : '0',
@@ -86,7 +71,6 @@ function toDefaultValues(variant?: ProductVariant | null): VariantValues {
     inStock: variant?.in_stock ?? true,
     isDefault: variant?.is_default ?? false,
     isActive: variant?.is_active ?? true,
-    attributes: attributes.length ? attributes : [{ key: '', value: '' }],
   };
 }
 
@@ -105,7 +89,6 @@ export function VariantFormDialog({
     register,
     handleSubmit,
     reset,
-    control,
     watch,
     setValue,
     formState: { errors },
@@ -114,19 +97,11 @@ export function VariantFormDialog({
     defaultValues: toDefaultValues(variant),
   });
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: 'attributes',
-  });
-
   useEffect(() => {
     if (open) reset(toDefaultValues(variant));
   }, [open, variant, reset]);
 
   const onSubmit = (values: VariantValues) => {
-    const attributes = Object.fromEntries(
-      values.attributes.filter((a) => a.key).map((a) => [a.key, a.value]),
-    );
     const input = {
       product_id: productId,
       title: values.title,
@@ -138,7 +113,6 @@ export function VariantFormDialog({
       in_stock: values.inStock,
       is_default: values.isDefault,
       is_active: values.isActive,
-      attributes,
     };
 
     if (isEditing) {
@@ -163,9 +137,9 @@ export function VariantFormDialog({
             {isEditing ? 'Edit variant' : 'New variant'}
           </DialogTitle>
           <DialogDescription>
-            Title is the label shown to customers for this variant (e.g.
-            &quot;500 g&quot; or &quot;Large / Red&quot;). Attributes are the
-            structured details behind it (e.g. weight: 500 g).
+            The SKU is generated automatically. Title is the label shown to
+            customers for this variant (e.g. &quot;500 g&quot; or &quot;Large /
+            Red&quot;) — it must be unique for this product.
           </DialogDescription>
         </DialogHeader>
 
@@ -226,48 +200,6 @@ export function VariantFormDialog({
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="variant-stock">Stock</Label>
             <Input id="variant-stock" type="number" {...register('stock')} />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label>
-              Attributes <span className="text-destructive">*</span>
-            </Label>
-            {fields.map((field, index) => (
-              <div key={field.id} className="flex items-center gap-2">
-                <Input
-                  placeholder="key (e.g. weight)"
-                  {...register(`attributes.${index}.key`)}
-                />
-                <Input
-                  placeholder="value (e.g. 500 g)"
-                  {...register(`attributes.${index}.value`)}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => remove(index)}
-                  disabled={fields.length === 1}
-                >
-                  <Trash2 className="size-4" />
-                </Button>
-              </div>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="self-start"
-              onClick={() => append({ key: '', value: '' })}
-            >
-              <Plus className="size-4" />
-              Add attribute
-            </Button>
-            {errors.attributes && (
-              <p className="text-destructive text-sm">
-                {errors.attributes.message}
-              </p>
-            )}
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:gap-6">

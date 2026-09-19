@@ -16,7 +16,6 @@ import {
   type OrderShippingAddress,
   type OrderStatus,
 } from '@/features/orders/types';
-import type { Json } from '@/types/database';
 
 export function OrderEditPage() {
   const { orderId } = useParams({ strict: false });
@@ -82,7 +81,6 @@ export function OrderEditPage() {
     sku: item.sku,
     unitPrice: Number(item.unit_price),
     quantity: item.quantity,
-    attributes: (item.attributes as Record<string, unknown>) ?? {},
   }));
 
   const handleSubmit = (values: OrderFormValues, items: OrderItemDraft[]) => {
@@ -123,7 +121,6 @@ export function OrderEditPage() {
           product_name: item.productName,
           variant_title: item.variantTitle,
           sku: item.sku,
-          attributes: item.attributes as Json,
           unit_price: item.unitPrice,
           quantity: item.quantity,
           line_total: item.unitPrice * item.quantity,

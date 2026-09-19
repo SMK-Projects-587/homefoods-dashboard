@@ -15,20 +15,13 @@ export interface ProductListItem extends Product {
   categories: { id: number; name: string } | null;
   product_variants: Pick<
     ProductVariant,
-    | 'id'
-    | 'title'
-    | 'sku'
-    | 'price'
-    | 'is_default'
-    | 'is_active'
-    | 'in_stock'
-    | 'attributes'
+    'id' | 'title' | 'sku' | 'price' | 'is_default' | 'is_active' | 'in_stock'
   >[];
 }
 
 export interface VariantBySku extends Pick<
   ProductVariant,
-  'id' | 'sku' | 'title' | 'price' | 'attributes'
+  'id' | 'sku' | 'title' | 'price'
 > {
   products: { id: number; name: string } | null;
 }
