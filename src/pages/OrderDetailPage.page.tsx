@@ -21,6 +21,7 @@ import { PaymentStatusSelect } from '@/features/orders/components/PaymentStatusS
 import { useOrder } from '@/features/orders/hooks/useOrders';
 import {
   isOrderEditable,
+  isShippingAddressComplete,
   type OrderShippingAddress,
   type OrderStatus,
 } from '@/features/orders/types';
@@ -82,7 +83,11 @@ export function OrderDetailPage() {
             </Button>
           )}
           <DuplicateOrderButton order={order} />
-          <OrderStatusActions orderId={order.id} status={status} />
+          <OrderStatusActions
+            orderId={order.id}
+            status={status}
+            isShippingAddressComplete={isShippingAddressComplete(address)}
+          />
         </div>
       </div>
 

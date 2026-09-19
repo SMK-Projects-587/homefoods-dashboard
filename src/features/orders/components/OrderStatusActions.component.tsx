@@ -2,6 +2,11 @@ import { useState } from 'react';
 
 import { ConfirmDialog } from '@/components/app/ConfirmDialog';
 import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 import { CancelOrderDialog } from './CancelOrderDialog.component';
@@ -21,6 +26,8 @@ const ACTION_LABEL: Partial<Record<OrderStatus, string>> = {
 interface OrderStatusActionsProps {
   orderId: number;
   status: OrderStatus;
+  /** Required to confirm — a shipping address must be on file first. */
+  isShippingAddressComplete: boolean;
   className?: string;
 }
 
@@ -34,6 +41,7 @@ interface OrderStatusActionsProps {
 export function OrderStatusActions({
   orderId,
   status,
+  isShippingAddressComplete,
   className,
 }: OrderStatusActionsProps) {
   const mutation = useUpdateOrderStatus(orderId);
@@ -57,28 +65,49 @@ export function OrderStatusActions({
 
   return (
     <div className={cn('flex flex-wrap gap-2', className)}>
-      {nextStatuses.map((next) =>
-        next === 'cancelled' ? (
-          <Button
-            key={next}
-            type="button"
-            variant="destructive"
-            onClick={() => setCancelOpen(true)}
-            disabled={mutation.isPending}
-          >
-            Cancel order
-          </Button>
-        ) : (
+      {nextStatuses.map((next) => {
+        if (next === 'cancelled') {
+          return (
+            <Button
+              key={next}
+              type="button"
+              variant="destructive"
+              onClick={() => setCancelOpen(true)}
+              disabled={mutation.isPending}
+            >
+              Cancel order
+            </Button>
+          );
+        }
+
+        const blockedByAddress =
+          next === 'confirmed' && !isShippingAddressComplete;
+        const button = (
           <Button
             key={next}
             type="button"
             onClick={() => setConfirmTarget(next)}
-            disabled={mutation.isPending}
+            disabled={mutation.isPending || blockedByAddress}
           >
             {ACTION_LABEL[next]}
           </Button>
-        ),
-      )}
+        );
+
+        if (!blockedByAddress) return button;
+
+        return (
+          <Tooltip key={next}>
+            <TooltipTrigger asChild>
+              {/* span wrapper: Tooltip needs a hoverable target even while
+                  the inner Button is disabled. */}
+              <span>{button}</span>
+            </TooltipTrigger>
+            <TooltipContent>
+              Add a complete shipping address before confirming.
+            </TooltipContent>
+          </Tooltip>
+        );
+      })}
 
       <ConfirmDialog
         open={confirmTarget !== null}

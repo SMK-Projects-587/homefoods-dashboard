@@ -22,6 +22,23 @@ export interface OrderShippingAddress {
   country?: string;
 }
 
+/**
+ * A pending order can be created/saved without a shipping address (the
+ * address is often collected over a follow-up call), but confirming it
+ * commits to fulfilling it, so the address must be complete by then.
+ * `line2` stays optional — not every address has a second line.
+ */
+export function isShippingAddressComplete(
+  address: OrderShippingAddress,
+): boolean {
+  return !!(
+    address.line1?.trim() &&
+    address.city?.trim() &&
+    address.state?.trim() &&
+    address.postal_code?.trim()
+  );
+}
+
 export const ORDER_STATUSES = [
   'pending',
   'confirmed',
