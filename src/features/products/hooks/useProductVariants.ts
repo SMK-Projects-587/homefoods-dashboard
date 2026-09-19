@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { productKey } from './useProducts';
 
-import { createVariant, deleteVariant, updateVariant } from '../api';
+import { createVariant, updateVariant } from '../api';
 import type { ProductVariantInsert, ProductVariantUpdate } from '../types';
 
 export function useCreateVariant(productId: number) {
@@ -31,13 +31,15 @@ export function useUpdateVariant(productId: number) {
   });
 }
 
-export function useDeleteVariant(productId: number) {
+/** Variants are never deleted (DB-enforced) — only deactivated via `is_active`. */
+export function useSetVariantActive(productId: number) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => deleteVariant(id),
-    onSuccess: () => {
+    mutationFn: ({ id, isActive }: { id: number; isActive: boolean }) =>
+      updateVariant(id, { is_active: isActive }),
+    onSuccess: (_data, { isActive }) => {
       queryClient.invalidateQueries({ queryKey: productKey(productId) });
-      toast.success('Variant removed');
+      toast.success(isActive ? 'Variant activated' : 'Variant deactivated');
     },
     onError: (error: Error) => toast.error(error.message),
   });

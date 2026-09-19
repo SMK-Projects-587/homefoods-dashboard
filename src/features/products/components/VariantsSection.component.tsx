@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { MoreHorizontal, Plus } from 'lucide-react';
 import type { ColumnDef } from '@tanstack/react-table';
 
-import { ConfirmDialog } from '@/components/app/ConfirmDialog';
 import { DataTable } from '@/components/app/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,7 +21,7 @@ import {
 
 import { VariantFormDialog } from './VariantFormDialog.component';
 
-import { useDeleteVariant } from '../hooks/useProductVariants';
+import { useSetVariantActive } from '../hooks/useProductVariants';
 import type { ProductVariant } from '../types';
 
 interface VariantsSectionProps {
@@ -35,10 +34,7 @@ export function VariantsSection({ productId, variants }: VariantsSectionProps) {
   const [editingVariant, setEditingVariant] = useState<ProductVariant | null>(
     null,
   );
-  const [pendingDelete, setPendingDelete] = useState<ProductVariant | null>(
-    null,
-  );
-  const deleteMutation = useDeleteVariant(productId);
+  const setActiveMutation = useSetVariantActive(productId);
 
   const columns: ColumnDef<ProductVariant, unknown>[] = [
     { accessorKey: 'title', header: 'Title' },
@@ -93,10 +89,15 @@ export function VariantsSection({ productId, variants }: VariantsSectionProps) {
               Edit
             </DropdownMenuItem>
             <DropdownMenuItem
-              variant="destructive"
-              onSelect={() => setPendingDelete(row.original)}
+              variant={row.original.is_active ? 'destructive' : undefined}
+              onSelect={() =>
+                setActiveMutation.mutate({
+                  id: row.original.id,
+                  isActive: !row.original.is_active,
+                })
+              }
             >
-              Delete
+              {row.original.is_active ? 'Deactivate' : 'Activate'}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -132,19 +133,6 @@ export function VariantsSection({ productId, variants }: VariantsSectionProps) {
         onOpenChange={setDialogOpen}
         productId={productId}
         variant={editingVariant}
-      />
-      <ConfirmDialog
-        open={!!pendingDelete}
-        onOpenChange={(open) => !open && setPendingDelete(null)}
-        title="Delete variant"
-        description={`Delete "${pendingDelete?.title}"? This can't be undone.`}
-        isPending={deleteMutation.isPending}
-        onConfirm={() =>
-          pendingDelete &&
-          deleteMutation.mutate(pendingDelete.id, {
-            onSuccess: () => setPendingDelete(null),
-          })
-        }
       />
     </Card>
   );
