@@ -165,3 +165,46 @@ export async function deleteProductImage(id: number): Promise<void> {
   const { error } = await supabase.from('product_images').delete().eq('id', id);
   if (error) throw error;
 }
+
+/** Curated bestsellers, ranked — the storefront falls back to the regular
+ *  (alphabetical) catalog order for its top-N section when this is empty. */
+export async function getBestsellers(): Promise<Product[]> {
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('is_bestseller', true)
+    .order('bestseller_rank', { ascending: true, nullsFirst: false })
+    .order('name', { ascending: true });
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Writes the whole edited bestseller list in one go — the dashboard's picker
+ * is edit-then-Save, not save-per-click, so additions/removals/reordering
+ * all land here together. `orderedIds` becomes the new ranking (index + 1);
+ * `removedIds` are products that were bestsellers before this save and no
+ * longer are.
+ */
+export async function saveBestsellers(
+  orderedIds: number[],
+  removedIds: number[],
+): Promise<void> {
+  const updates = [
+    ...orderedIds.map((id, index) =>
+      supabase
+        .from('products')
+        .update({ is_bestseller: true, bestseller_rank: index + 1 })
+        .eq('id', id),
+    ),
+    ...removedIds.map((id) =>
+      supabase
+        .from('products')
+        .update({ is_bestseller: false, bestseller_rank: null })
+        .eq('id', id),
+    ),
+  ];
+  const results = await Promise.all(updates);
+  const failed = results.find((r) => r.error);
+  if (failed?.error) throw failed.error;
+}

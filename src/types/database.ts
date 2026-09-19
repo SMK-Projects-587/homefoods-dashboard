@@ -404,11 +404,13 @@ export type Database = {
       };
       products: {
         Row: {
+          bestseller_rank: number | null;
           category_id: number | null;
           created_at: string;
           description: string;
           id: number;
           is_active: boolean;
+          is_bestseller: boolean;
           keywords: string[];
           meta_description: string;
           meta_title: string;
@@ -419,11 +421,13 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          bestseller_rank?: number | null;
           category_id?: number | null;
           created_at?: string;
           description?: string;
           id?: never;
           is_active?: boolean;
+          is_bestseller?: boolean;
           keywords?: string[];
           meta_description?: string;
           meta_title?: string;
@@ -434,11 +438,13 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          bestseller_rank?: number | null;
           category_id?: number | null;
           created_at?: string;
           description?: string;
           id?: never;
           is_active?: boolean;
+          is_bestseller?: boolean;
           keywords?: string[];
           meta_description?: string;
           meta_title?: string;

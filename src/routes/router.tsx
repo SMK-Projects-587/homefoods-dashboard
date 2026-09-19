@@ -193,6 +193,18 @@ const orderEditRoute = createRoute({
   ),
 });
 
+const bestsellersRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  path: '/bestsellers',
+  staticData: {
+    breadcrumb: [{ label: 'Home', to: '/' }, { label: 'Bestsellers' }],
+  },
+  component: lazyRouteComponent(
+    () => import('@/pages/BestsellersPage.page'),
+    'BestsellersPage',
+  ),
+});
+
 const invoicesRoute = createRoute({
   getParentRoute: () => authenticatedRoute,
   path: '/invoices',
@@ -218,6 +230,7 @@ const routeTree = rootRoute.addChildren([
     orderNewRoute,
     orderDetailRoute,
     orderEditRoute,
+    bestsellersRoute,
     invoicesRoute,
   ]),
 ]);

@@ -4,6 +4,7 @@ import {
   Package,
   Receipt,
   ShoppingCart,
+  Star,
 } from 'lucide-react';
 import { Link, useRouterState } from '@tanstack/react-router';
 
@@ -23,6 +24,7 @@ const NAV_ITEMS = [
   { to: '/', label: 'Overview', icon: LayoutDashboard },
   { to: '/categories', label: 'Categories', icon: ListTree },
   { to: '/products', label: 'Products', icon: Package },
+  { to: '/bestsellers', label: 'Bestsellers', icon: Star },
   { to: '/orders', label: 'Orders', icon: ShoppingCart },
   { to: '/invoices', label: 'Invoices', icon: Receipt },
 ] as const;
