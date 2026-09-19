@@ -1,11 +1,9 @@
-import { useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 
-import { ArrowDown, ArrowUp, Loader2, X } from 'lucide-react';
-import { useBlocker } from '@tanstack/react-router';
+import { ArrowDown, ArrowUp, X } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 import { ProductCombobox } from './ProductCombobox.component';
@@ -26,7 +24,19 @@ function arraysEqual(a: number[], b: number[]): boolean {
   return a.length === b.length && a.every((id, i) => id === b[i]);
 }
 
-export function BestsellersManager() {
+export interface BestsellersManagerHandle {
+  save: () => void;
+}
+
+interface BestsellersManagerProps {
+  onDirtyChange?: (isDirty: boolean) => void;
+  onSavingChange?: (isSaving: boolean) => void;
+}
+
+export const BestsellersManager = forwardRef<
+  BestsellersManagerHandle,
+  BestsellersManagerProps
+>(function BestsellersManager({ onDirtyChange, onSavingChange }, ref) {
   const { data: bestsellers, isPending } = useBestsellers();
   const saveMutation = useSaveBestsellers();
 
@@ -54,12 +64,24 @@ export function BestsellersManager() {
   const draftIds = draft?.map((p) => p.id) ?? [];
   const isDirty = draft !== null && !arraysEqual(originalIds, draftIds);
 
-  useBlocker({
-    shouldBlockFn: () =>
-      isDirty &&
-      !window.confirm('You have unsaved changes. Leave without saving?'),
-    enableBeforeUnload: isDirty,
-  });
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+
+  useEffect(() => {
+    onSavingChange?.(saveMutation.isPending);
+  }, [saveMutation.isPending, onSavingChange]);
+
+  useImperativeHandle(ref, () => ({
+    save: () => {
+      if (!draft) return;
+      const removedIds = originalIds.filter((id) => !draftIds.includes(id));
+      saveMutation.mutate(
+        { orderedIds: draftIds, removedIds },
+        { onSuccess: () => setDraft(null) },
+      );
+    },
+  }));
 
   const move = (index: number, direction: -1 | 1) => {
     setDraft((prev) => {
@@ -84,118 +106,79 @@ export function BestsellersManager() {
     });
   };
 
-  const handleSave = () => {
-    if (!draft) return;
-    const removedIds = originalIds.filter((id) => !draftIds.includes(id));
-    saveMutation.mutate(
-      { orderedIds: draftIds, removedIds },
-      { onSuccess: () => setDraft(null) },
-    );
-  };
-
   const list = draft ?? [];
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Bestsellers</CardTitle>
+    <div className="flex flex-col gap-4">
+      <ProductCombobox value={null} onChange={add} />
+
+      {isPending && draft === null ? (
+        <p className="text-muted-foreground text-sm">Loading…</p>
+      ) : list.length === 0 ? (
         <p className="text-muted-foreground text-sm">
-          Products featured in the storefront&apos;s Bestsellers section, in
-          this order — only the top {STOREFRONT_BESTSELLER_LIMIT} are shown
-          there. If none are selected, the storefront falls back to its regular
-          catalog order (first {STOREFRONT_BESTSELLER_LIMIT} products
-          alphabetically). Changes here are not applied until you save.
+          No bestsellers selected yet — search above to add one.
         </p>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <ProductCombobox value={null} onChange={add} />
-
-        {isPending && draft === null ? (
-          <p className="text-muted-foreground text-sm">Loading…</p>
-        ) : list.length === 0 ? (
-          <p className="text-muted-foreground text-sm">
-            No bestsellers selected yet — search above to add one.
-          </p>
-        ) : (
-          <div className="flex flex-col gap-1.5">
-            {list.map((product, index) => {
-              const overLimit = index >= STOREFRONT_BESTSELLER_LIMIT;
-              return (
-                <div
-                  key={product.id}
-                  className={cn(
-                    'border-border flex items-center gap-2 rounded-md border p-2',
-                    overLimit && 'opacity-60',
-                  )}
-                >
-                  <span className="text-muted-foreground w-6 text-right text-sm tabular-nums">
-                    {index + 1}
-                  </span>
-                  <div className="flex-1">
-                    <p className="text-foreground text-sm font-medium">
-                      {product.name}
+      ) : (
+        <div className="flex flex-col gap-1.5">
+          {list.map((product, index) => {
+            const overLimit = index >= STOREFRONT_BESTSELLER_LIMIT;
+            return (
+              <div
+                key={product.id}
+                className={cn(
+                  'border-border flex items-center gap-2 rounded-md border p-2',
+                  overLimit && 'opacity-60',
+                )}
+              >
+                <span className="text-muted-foreground w-6 text-right text-sm tabular-nums">
+                  {index + 1}
+                </span>
+                <div className="flex-1">
+                  <p className="text-foreground text-sm font-medium">
+                    {product.name}
+                  </p>
+                  {overLimit && (
+                    <p className="text-muted-foreground text-xs">
+                      Won&apos;t appear on the storefront — only the top{' '}
+                      {STOREFRONT_BESTSELLER_LIMIT} show.
                     </p>
-                    {overLimit && (
-                      <p className="text-muted-foreground text-xs">
-                        Won&apos;t appear on the storefront — only the top{' '}
-                        {STOREFRONT_BESTSELLER_LIMIT} show.
-                      </p>
-                    )}
-                  </div>
-                  {!product.is_active && (
-                    <Badge variant="secondary">Inactive</Badge>
                   )}
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    disabled={index === 0}
-                    onClick={() => move(index, -1)}
-                  >
-                    <ArrowUp className="size-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    disabled={index === list.length - 1}
-                    onClick={() => move(index, 1)}
-                  >
-                    <ArrowDown className="size-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="text-destructive"
-                    onClick={() => remove(product.id)}
-                  >
-                    <X className="size-4" />
-                  </Button>
                 </div>
-              );
-            })}
-          </div>
-        )}
-
-        <div className="flex items-center justify-end gap-2">
-          {isDirty && (
-            <span className="text-muted-foreground text-sm">
-              Unsaved changes
-            </span>
-          )}
-          <Button
-            type="button"
-            disabled={!isDirty || saveMutation.isPending}
-            onClick={handleSave}
-          >
-            {saveMutation.isPending && (
-              <Loader2 className="size-4 animate-spin" />
-            )}
-            Save changes
-          </Button>
+                {!product.is_active && (
+                  <Badge variant="secondary">Inactive</Badge>
+                )}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  disabled={index === 0}
+                  onClick={() => move(index, -1)}
+                >
+                  <ArrowUp className="size-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  disabled={index === list.length - 1}
+                  onClick={() => move(index, 1)}
+                >
+                  <ArrowDown className="size-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="text-destructive"
+                  onClick={() => remove(product.id)}
+                >
+                  <X className="size-4" />
+                </Button>
+              </div>
+            );
+          })}
         </div>
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
-}
+});
