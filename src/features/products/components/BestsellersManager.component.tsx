@@ -110,7 +110,7 @@ export const BestsellersManager = forwardRef<
 
   return (
     <div className="flex flex-col gap-4">
-      <ProductCombobox value={null} onChange={add} />
+      <ProductCombobox value={null} onChange={add} excludeIds={draftIds} />
 
       {isPending && draft === null ? (
         <p className="text-muted-foreground text-sm">Loading…</p>

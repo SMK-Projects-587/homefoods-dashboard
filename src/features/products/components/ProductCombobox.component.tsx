@@ -19,6 +19,9 @@ import type { ProductListItem } from '../types';
 interface ProductComboboxProps {
   value: ProductListItem | null;
   onChange: (product: ProductListItem) => void;
+  /** Products to hide from the results — e.g. ones already picked elsewhere
+   *  in the surrounding form, so they can't be added twice. */
+  excludeIds?: number[];
   className?: string;
 }
 
@@ -27,6 +30,7 @@ const ROW_HEIGHT = 40;
 export function ProductCombobox({
   value,
   onChange,
+  excludeIds,
   className,
 }: ProductComboboxProps) {
   const [open, setOpen] = useState(false);
@@ -42,10 +46,12 @@ export function ProductCombobox({
     isFetching,
   } = useInfiniteProducts(debouncedSearch);
 
-  const products = useMemo(
-    () => data?.pages.flatMap((page) => page.rows) ?? [],
-    [data],
-  );
+  const products = useMemo(() => {
+    const rows = data?.pages.flatMap((page) => page.rows) ?? [];
+    return excludeIds?.length
+      ? rows.filter((p) => !excludeIds.includes(p.id))
+      : rows;
+  }, [data, excludeIds]);
 
   // State-backed ref: the scroll element lives inside the portaled popover and
   // only mounts on open, so a plain useRef wouldn't re-render the virtualizer
